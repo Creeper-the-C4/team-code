@@ -12,11 +12,14 @@
    Autocorrelation period with parabolic interpolation on 8 s chunks; thigh
    excursion per stride; dimensionless step frequency f*sqrt(L/g) when leg
    lengths are given. Checks whether slow < moderate < brisk holds per subject.
-5. Kinematic walking speed v_hat = 2 L sin(dtheta/2) * f_step (L = thigh +
-   shank length, dtheta = thigh excursion) checked against the fixed
-   treadmill speeds of the protocol: slow/moderate/brisk = 0.9/1.2/1.5 m/s
-   (Feng et al. 2026). The estimator is an inverted-pendulum approximation
-   and must be reported as an estimate; the belt speed is the reference.
+5. Kinematic walking speed v_hat = 2 L sin(dtheta_th/2) * f_step, checked
+   against the fixed treadmill speeds of the protocol: slow/moderate/brisk =
+   0.9/1.2/1.5 m/s (Feng et al. 2026). dtheta_th is the full peak-to-peak
+   thigh excursion over a stride; f_step is steps per second (two per gait
+   cycle); L approximates the effective hip-to-ankle leg length as thigh +
+   shank length. It is a simplified kinematic (inverted-pendulum) estimate.
+   The comparison is in the belt frame: the world-frame pelvis is ~stationary
+   on a treadmill, and the belt speed is the protocol reference.
 6. Optional: where misclassified windows of one class sit inside their trials,
    given an out-of-fold prediction table (--oof).
 """

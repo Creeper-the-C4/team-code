@@ -14,10 +14,13 @@ Decision rule, fixed BEFORE running on real data:
 - T2 foot zero-velocity stride integration (stance from the gyro, whose rad/s
   unit is already confirmed): a hypothesis passes when the ascending-stairs
   stride rise is in [0.20, 0.50] m AND the level-walking stride length is in
-  [0.80, 2.00] m. On a treadmill (walking is at fixed belt speeds) the stance
-  foot moves at constant belt velocity, so stance-to-stance integration with
-  equal end velocities gives the stride relative to the belt; the test stays
-  valid.
+  [0.80, 2.00] m. Treadmill frames (walking is at fixed belt speed v_b): in
+  the laboratory/world frame the non-slipping stance foot moves at -v_b and
+  the mean pelvis velocity is ~0; in the belt frame the stance foot is at
+  rest and the pelvis moves at +v_b. The data are world-frame, so
+  stance-to-stance integration starts and ends at the same velocity -v_b; the
+  linear velocity detrend removes it and the result is the stride expressed
+  in the belt frame. The test therefore stays valid.
 - Verdict 'g' or 'mps2' only when T1 and T2 agree; 'specific_force' when T1
   finds that signature; otherwise 'filtered_or_unresolved'.
 Supporting evidence only:
