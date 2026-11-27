@@ -58,6 +58,8 @@ Thumbs.db
 
 # Explicit small V4 diagnostics and experiment summaries
 !results/p0_diagnostics/*.csv
-!results/task1_v4/*.csv
-!results/task2_v4/*.csv
-!results/task3_v4/*.csv
+!results/task1_v4/**/*.csv
+!results/task2_v4/**/*.csv
+!results/task3_v4/**/*.csv
+!results/final_report/*.csv
+!results/timing_by_stage.csv

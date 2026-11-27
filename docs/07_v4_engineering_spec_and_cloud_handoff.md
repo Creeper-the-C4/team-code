@@ -2,13 +2,12 @@
 
 本文档面向云端计算环境（RTX 4090 / `independent_v1` 30 人全量缓存），按执行顺序给出**可直接复制执行的云端操作步骤**、**结果回传要求**以及 **V4.0 冻结工程口径**。
 
-> **极速执行总览（按顺序操作即可）**
+> **极速执行总览（全部代码已合入 `main` 并通过 Linux 82/82 单测与全链路冒烟，直接按顺序操作即可）**
 > 1. **拉取最新 `main` 并核对环境**：执行 `git pull --ff-only origin main` 并记录 `git rev-parse HEAD`。
-> 2. **执行实验（二选一，按拉取后仓库实际文件为准）**：
->    - **若拉取后仓库中已存在 `scripts/run_cloud_all_v4.sh`**（完整一键总脚本合入后）：直接进 `tmux` 运行 `bash scripts/run_cloud_all_v4.sh`，无人值守一次性连跑 **P0 数据检查 → 任务一多特征/2s与4s/时序平滑 → 任务二 17 传感器帕累托 → 任务三留出重建 → 自动打包 `cloud_v4_final_bundle.zip`**。
->    - **若拉取时尚未看到总脚本**：先按下方第一节运行已经入库的 **3 个 P0 数据检查脚本**（只读缓存，约 3–10 分钟）并先回传 `results/p0_diagnostics/`。
-> 3. **只需回报两次**：① 刚启动时发回 `git rev-parse HEAD` 与开头若干行启动日志；② 全部跑完后回传 `results/p0_diagnostics/`（或总脚本生成的 `cloud_v4_final_bundle.zip`，只含小体积表格/图/日志，不传大文件）。
-> 4. **后续接力**：拿到本轮结果并完成 P0 加速度单位裁决与验收后，再推送最终带物理约束精修版及 4090 GPU 深度对照脚本，做最后一轮收官运行。
+> 2. **一键启动全量无人值守运行**：进入 `tmux new -s v4_run` 并执行 **`bash scripts/run_cloud_all_v4.sh`**，自动依次完成 **Stage 0（P0 数据检查，3–10 min）→ Stage 1（2s/4s 特征缓存）→ Stage 2（Task 1 全消融 + Sticky HMM）→ Stage 3（Task 2 17 传感器帕累托，含 `ranking_prefix` 对照与 exact wrapper 主线）→ Stage 4（Task 3 WNOJ 留出重建，强制 `--accel-unit none`）→ Stage 6（自动打包 `results/cloud_v4_final_bundle.zip`）**。
+>    - 如只想先单跑第一步 P0 数据检查，仍可直接运行下方第一节的 3 条命令并回传 `results/p0_diagnostics/`。
+> 3. **只需回报两次**：① 刚启动时发回 `git rev-parse HEAD` 与开头若干行启动日志；② 全部跑完后回传 `results/cloud_v4_final_bundle.zip`（只含小体积表格/图/日志，不传大文件）。
+> 4. **后续接力**：拿到本轮结果并完成 P0 加速度单位裁决与验收后，再推送带物理约束精修版及 4090 GPU 深度对照脚本，做最后一轮收官运行。
 
 ---
 
@@ -125,12 +124,12 @@ git push origin main
 
 ---
 
-## 四、当前已合入与即将合入的模块清单
+## 四、当前已全部合入 `main` 并通过 Linux 全链路验证的模块清单
 
 | 模块 | 路径 | 当前状态 | 云端执行时机 |
 | :--- | :--- | :--- | :--- |
-| P0 实测诊断脚本 | `scripts/diagnostics/` + `tests/test_diag_p0.py` | **已合入 `main`（7/7 单测通过）** | **服务器开机后第一时间运行（约 3–10 分钟）** |
-| Task 4 脊柱可观性分析 | `src/spine/` + `results/spine_offline_v1/` + `tests/test_spine_offline.py` | **已合入 `main`（37/37 单测通过）** | 离线完成；P0 回传后回填实测噪声区间 $\kappa$ |
-| Task 1/2 V4 特征族、Sticky HMM 与 6 折帕累托脚本 | `src/v4_features/`、`scripts/task1_v4/`、`scripts/task2_v4/` | 代码初版已完成，正在补全统计项与 Linux 全链路冒烟后合入 `main` | 由一键脚本 `scripts/run_cloud_all_v4.sh` 自动串联执行 |
-| Task 3 $SO(3)$ WNOJ 平滑器与留出评估器 | `src/task3/`、`scripts/task3/` | 代码初版已完成（64/64 单测通过），正在补全统计项与 Linux 全链路冒烟后合入 `main` | 由一键脚本以 `--accel-unit none` 自动串联执行；待 P0 裁决后再启加速度精修版 |
-| 一键云端连跑总控与打包器 | `scripts/run_cloud_all_v4.sh`、`scripts/package_cloud_v4_bundle.py` | 全链路 Linux 冒烟验证通过后合入 `main` | 开机 `tmux` 一键启动，结束后一次性回传 `cloud_v4_final_bundle.zip` |
+| P0 实测诊断脚本 | `scripts/diagnostics/` + `tests/test_diag_p0.py` | **已合入 `main`（7/7 通过）** | `run_cloud_all_v4.sh` Stage 0 自动执行（3–10 分钟） |
+| Task 1/2 V4 特征族、Sticky HMM 与 6 折帕累托脚本 | `src/v4_features/`、`scripts/task1_v4/`、`scripts/task2_v4/` + `tests/test_wp1_v4_features_and_masking.py` | **已合入 `main`（Linux 14/14 全通过，含真实 `pyarrow` + `lightgbm`）** | `run_cloud_all_v4.sh` Stage 1–3 自动执行 |
+| Task 3 $SO(3)$ WNOJ 平滑器与留出评估器 | `src/task3/`、`scripts/task3/`、`results/task3_offline_v1/` + `tests/test_task3_wnoj.py` | **已合入 `main`（24/24 通过，含 ODE 运动学校验与双层加速度门控）** | `run_cloud_all_v4.sh` Stage 4 以 `--accel-unit none` 自动执行；待 P0 裁决后再启加速度精修版 |
+| Task 4 脊柱可观性分析 | `src/spine/` + `results/spine_offline_v1/` + `tests/test_spine_offline.py` | **已合入 `main`（37/37 通过）** | 离线完成；P0 回传后回填实测噪声区间 $\kappa$ |
+| 一键云端连跑总控与打包器 | `scripts/run_cloud_all_v4.sh`、`scripts/package_cloud_v4_bundle.py` | **已合入 `main`（Linux `--smoke` 全阶段 + 二次 `[RESUME_SKIP]` 断点续跑 + 103 文件 ZIP 验证通过）** | 开机 `tmux` 一键启动，结束后一次性回传 `results/cloud_v4_final_bundle.zip` |

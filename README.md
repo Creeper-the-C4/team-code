@@ -2,17 +2,26 @@
 
 本仓库（`Creeper-the-C4/team-code`）用于沉淀我们团队在 **2026“认证杯”ICM C 题** 中的完整调研、文献审计、数学建模文档、可复现代码与实验结果。
 
-## 最新进度 2026年11月28日（云端执行顺序与 V4.0 落库状态）
+## 最新进度 2026年11月28日（V4.0 全套云端代码已冻结合入 `main`，Linux 82/82 单测 + 全链路冒烟通过）
 
-> **云端服务器操作请直接按 [docs/07_v4_engineering_spec_and_cloud_handoff.md](docs/07_v4_engineering_spec_and_cloud_handoff.md) 的第 1–4 步顺序执行**：
-> 1. `git pull --ff-only origin main` 拉取最新代码并记录 `git rev-parse HEAD`；
-> 2. 若仓库已有 `scripts/run_cloud_all_v4.sh`，直接进 `tmux` 一条命令连跑全量并生成 `cloud_v4_final_bundle.zip`；若尚未合入总脚本，先花 3–10 分钟跑完已入库的 **3 个 P0 只读诊断脚本**（[scripts/diagnostics/README.md](scripts/diagnostics/README.md)）；
-> 3. 回传启动时的 `HEAD` 号/日志及跑完后的小体积结果包（`results/p0_diagnostics/` 或 `cloud_v4_final_bundle.zip`），不含大文件；
-> 4. 验收 P0 单位裁决与本轮结果后，再推送带物理约束精修版与 GPU 深度模型对照脚本跑最终收官轮。
+> **云端服务器操作请直接按 [docs/07_v4_engineering_spec_and_cloud_handoff.md](docs/07_v4_engineering_spec_and_cloud_handoff.md) 执行（一次启动、无人值守连跑全量、一次性回传）**：
+> ```bash
+> cd /root/autodl-tmp/C_Problem/team-code
+> git fetch origin && git checkout main && git pull --ff-only origin main
+> git rev-parse HEAD
+> tmux new -s v4_run
+> bash scripts/run_cloud_all_v4.sh
+> ```
+> 1. 启动时回传 `git rev-parse HEAD` 与前若干行启动日志；
+> 2. 脚本自带 `flock` 防重入、SHA256 配置校验与断点续跑，自动串联 **Stage 0（P0 数据检查）→ Stage 1（2s/4s 特征提取）→ Stage 2（Task 1 全消融 + Sticky HMM）→ Stage 3（Task 2 17 传感器帕累托）→ Stage 4（Task 3 WNOJ 留出重建，`--accel-unit none`）→ Stage 6（自动汇总打包）**；
+> 3. 跑完后一次性回传小体积压缩包 `results/cloud_v4_final_bundle.zip`（只含表格、图和日志，不含大文件）。
 
-- **当前已合入 `main` 的模块**：
-  - P0 只读实测诊断脚本（`scripts/diagnostics/`，7/7 单测通过）
-  - Task 4 脊柱可观性离线包、敏感性扫描与 3 张论文图（`src/spine/` + [results/spine_offline_v1/summary.md](results/spine_offline_v1/summary.md)，37/37 单测通过，合计 44/44 通过）
+- **当前已全部合入 `main` 并经 Linux 实测验收的模块（全仓 `pytest -v tests/` 82/82 通过，全链路 `--smoke` 与二次断点续跑均通过）**：
+  - **P0 只读实测诊断**：`scripts/diagnostics/`（7/7 通过）
+  - **Task 1 & Task 2 V4 特征族、Sticky HMM 与 6 折帕累托**：`src/v4_features/`、`scripts/task1_v4/`、`scripts/task2_v4/`（14/14 通过，含真实 `pyarrow` + `lightgbm` 端到端测试）
+  - **Task 3 $SO(3)$ 李群 WNOJ 平滑器与留出评估器**：`src/task3/`、`scripts/task3/`、`results/task3_offline_v1/`（24/24 通过，含 ODE 运动学一致性、双层加速度禁用门控与 Stage 3→4 逐折接口测试）
+  - **Task 4 脊柱可观性离线包、敏感性扫描与 3 张论文图**：`src/spine/` + [results/spine_offline_v1/summary.md](results/spine_offline_v1/summary.md)（37/37 通过）
+  - **云端一键总控与打包器**：`scripts/run_cloud_all_v4.sh`、`scripts/package_cloud_v4_bundle.py`
 - **Task 1 LightGBM 六折探索性基线（2026-11-27）** 保持冻结作为对照：
 
 | 基线测试指标（`lightgbm_baseline_v1`） | 结果 |
