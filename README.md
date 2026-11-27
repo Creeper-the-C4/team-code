@@ -2,10 +2,17 @@
 
 本仓库（`Creeper-the-C4/team-code`）用于沉淀我们团队在 **2026“认证杯”ICM C 题** 中的完整调研、文献审计、数学建模文档、可复现代码与实验结果。
 
-## 最新进度 2026年11月28日（V4.0 冻结规范 + P0/WP3 落库）
+## 最新进度 2026年11月28日（云端执行顺序与 V4.0 落库状态）
 
-- **V4.0 工程规范与云端交接手册已就绪**：服务器重启后请先按 [docs/07_v4_engineering_spec_and_cloud_handoff.md](docs/07_v4_engineering_spec_and_cloud_handoff.md) 执行三个 P0 只读实测诊断脚本（[scripts/diagnostics/README.md](scripts/diagnostics/README.md)），裁决加速度语义/单位与协议细节后再跑全量实验。
-- **Task 4（WP3）脊柱可观性离线包已合入**：包含多节段运动学与信息矩阵代码（`src/spine/`）、静态/轨迹慢模态与三组敏感性扫描结果及 3 张核心图表（[results/spine_offline_v1/summary.md](results/spine_offline_v1/summary.md)），P0 + WP3 共 **44/44 项单元测试通过**（`results/spine_offline_v1/pytest_verification.log`）。
+> **云端服务器操作请直接按 [docs/07_v4_engineering_spec_and_cloud_handoff.md](docs/07_v4_engineering_spec_and_cloud_handoff.md) 的第 1–4 步顺序执行**：
+> 1. `git pull --ff-only origin main` 拉取最新代码并记录 `git rev-parse HEAD`；
+> 2. 若仓库已有 `scripts/run_cloud_all_v4.sh`，直接进 `tmux` 一条命令连跑全量并生成 `cloud_v4_final_bundle.zip`；若尚未合入总脚本，先花 3–10 分钟跑完已入库的 **3 个 P0 只读诊断脚本**（[scripts/diagnostics/README.md](scripts/diagnostics/README.md)）；
+> 3. 回传启动时的 `HEAD` 号/日志及跑完后的小体积结果包（`results/p0_diagnostics/` 或 `cloud_v4_final_bundle.zip`），不含大文件；
+> 4. 验收 P0 单位裁决与本轮结果后，再推送带物理约束精修版与 GPU 深度模型对照脚本跑最终收官轮。
+
+- **当前已合入 `main` 的模块**：
+  - P0 只读实测诊断脚本（`scripts/diagnostics/`，7/7 单测通过）
+  - Task 4 脊柱可观性离线包、敏感性扫描与 3 张论文图（`src/spine/` + [results/spine_offline_v1/summary.md](results/spine_offline_v1/summary.md)，37/37 单测通过，合计 44/44 通过）
 - **Task 1 LightGBM 六折探索性基线（2026-11-27）** 保持冻结作为对照：
 
 | 基线测试指标（`lightgbm_baseline_v1`） | 结果 |

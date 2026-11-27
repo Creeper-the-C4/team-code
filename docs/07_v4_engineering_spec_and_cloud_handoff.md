@@ -1,27 +1,43 @@
 # V4.0 工程规范与云端全量验证交接手册
 
-本文档面向云端计算环境（RTX 4090 / `independent_v1` 30 人全量缓存），提供**可直接复制执行的验证步骤**与 **V4.0 冻结工程口径**。请严格按阶段顺序执行，避免未经前置诊断即启用物理单位强假设。
+本文档面向云端计算环境（RTX 4090 / `independent_v1` 30 人全量缓存），按执行顺序给出**可直接复制执行的云端操作步骤**、**结果回传要求**以及 **V4.0 冻结工程口径**。
+
+> **极速执行总览（按顺序操作即可）**
+> 1. **拉取最新 `main` 并核对环境**：执行 `git pull --ff-only origin main` 并记录 `git rev-parse HEAD`。
+> 2. **执行实验（二选一，按拉取后仓库实际文件为准）**：
+>    - **若拉取后仓库中已存在 `scripts/run_cloud_all_v4.sh`**（完整一键总脚本合入后）：直接进 `tmux` 运行 `bash scripts/run_cloud_all_v4.sh`，无人值守一次性连跑 **P0 数据检查 → 任务一多特征/2s与4s/时序平滑 → 任务二 17 传感器帕累托 → 任务三留出重建 → 自动打包 `cloud_v4_final_bundle.zip`**。
+>    - **若拉取时尚未看到总脚本**：先按下方第一节运行已经入库的 **3 个 P0 数据检查脚本**（只读缓存，约 3–10 分钟）并先回传 `results/p0_diagnostics/`。
+> 3. **只需回报两次**：① 刚启动时发回 `git rev-parse HEAD` 与开头若干行启动日志；② 全部跑完后回传 `results/p0_diagnostics/`（或总脚本生成的 `cloud_v4_final_bundle.zip`，只含小体积表格/图/日志，不传大文件）。
+> 4. **后续接力**：拿到本轮结果并完成 P0 加速度单位裁决与验收后，再推送最终带物理约束精修版及 4090 GPU 深度对照脚本，做最后一轮收官运行。
 
 ---
 
-## 一、服务器重启后第一步：执行 P0 实测诊断（预计 1–3 分钟，无需 GPU）
+## 一、服务器重启后第一步：执行 P0 实测诊断（约 3–10 分钟，无需 GPU）
 
-P0 三个脚本均为**只读诊断**，仅通过 `scripts/preprocessing/independent_data_access.py` 读取现有 `independent_v1` 缓存，不修改任何预处理数据，也不依赖 GPU。
+P0 三个脚本均为**只读诊断**，仅通过 `scripts/preprocessing/independent_data_access.py` 读取现有 `independent_v1` 缓存（其中 `diag_accel_unit.py` 的 T6 会顺序扫描全部 30 人约 1,345 万帧 / 9 GB 缓存，耗时主要取决于磁盘顺序读速度，约 3–10 分钟），绝不修改任何预处理数据，也不依赖 GPU。
 
 ### 1.1 拉取最新代码与环境核对
 
 ```bash
-cd <你的 team-code 仓库根目录>
+cd /root/autodl-tmp/C_Problem/team-code
 git fetch origin
 git checkout main
 git pull --ff-only origin main
+git rev-parse HEAD
 
-# 可选：先跑离线单元测试（合成夹具，验证依赖与环境，预计 <10 秒，期望 44 passed）
+# 环境检查（云端 .venv 需具备 numpy/scipy/pandas/pyarrow/scikit-learn/lightgbm/matplotlib）
 PY=/root/autodl-tmp/C_Problem/.venv/bin/python
-$PY -m pytest -q tests/test_diag_p0.py tests/test_spine_offline.py
+$PY -c "import numpy, scipy, pandas, pyarrow, sklearn, lightgbm, matplotlib; print('ENV_OK')"
 ```
 
-### 1.2 依次运行三个 P0 诊断脚本
+### 1.2 依次运行三个 P0 诊断脚本（或直接跑一键总脚本）
+
+> 如果 `ls scripts/run_cloud_all_v4.sh` 已存在，直接执行：
+> ```bash
+> tmux new -s v4_run
+> bash scripts/run_cloud_all_v4.sh
+> ```
+> 该总脚本会自动先跑以下 3 个 P0 脚本并继续串联全部任务，且自带 `flock` 防重入与断点续跑（中途意外断开只需重新运行同一条命令）。若尚未合入总脚本，请直接运行下方 3 条命令：
 
 ```bash
 PY=/root/autodl-tmp/C_Problem/.venv/bin/python
@@ -109,11 +125,12 @@ git push origin main
 
 ---
 
-## 四、当前已合入与即将交付的模块清单
+## 四、当前已合入与即将合入的模块清单
 
 | 模块 | 路径 | 当前状态 | 云端执行时机 |
 | :--- | :--- | :--- | :--- |
-| P0 实测诊断脚本 | `scripts/diagnostics/` + `tests/test_diag_p0.py` | **已合入 `main`（7/7 单测通过）** | **服务器开机后第一时间运行** |
-| Task 4 脊柱可观性分析 | `src/spine/` + `results/spine_offline_v1/` + `tests/test_spine_offline.py` | **已合入 `main`（37/37 单测通过）** | 离线完成；P0 后回填实测 $\kappa$ |
-| WP1：Task 1/2 V4 特征族、Sticky HMM 与 6 折帕累托脚本 | `scripts/v4_features/`、`scripts/task2/`（待合入） | 本地离线编写与合成单测中 | P0 完成后直接在云端跑全量 30 人 |
-| WP2：Task 3 $SO(3)$ WNOJ 平滑器与留出评估器 | `src/task3/`、`scripts/task3/`（待合入） | 本地离线编写与合成单测中 | 先跑纯陀螺/四元数基准，P0 裁决后再启加速度因子 |
+| P0 实测诊断脚本 | `scripts/diagnostics/` + `tests/test_diag_p0.py` | **已合入 `main`（7/7 单测通过）** | **服务器开机后第一时间运行（约 3–10 分钟）** |
+| Task 4 脊柱可观性分析 | `src/spine/` + `results/spine_offline_v1/` + `tests/test_spine_offline.py` | **已合入 `main`（37/37 单测通过）** | 离线完成；P0 回传后回填实测噪声区间 $\kappa$ |
+| Task 1/2 V4 特征族、Sticky HMM 与 6 折帕累托脚本 | `src/v4_features/`、`scripts/task1_v4/`、`scripts/task2_v4/` | 代码初版已完成，正在补全统计项与 Linux 全链路冒烟后合入 `main` | 由一键脚本 `scripts/run_cloud_all_v4.sh` 自动串联执行 |
+| Task 3 $SO(3)$ WNOJ 平滑器与留出评估器 | `src/task3/`、`scripts/task3/` | 代码初版已完成（64/64 单测通过），正在补全统计项与 Linux 全链路冒烟后合入 `main` | 由一键脚本以 `--accel-unit none` 自动串联执行；待 P0 裁决后再启加速度精修版 |
+| 一键云端连跑总控与打包器 | `scripts/run_cloud_all_v4.sh`、`scripts/package_cloud_v4_bundle.py` | 全链路 Linux 冒烟验证通过后合入 `main` | 开机 `tmux` 一键启动，结束后一次性回传 `cloud_v4_final_bundle.zip` |
