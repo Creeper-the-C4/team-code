@@ -24,6 +24,12 @@ from .so3_lie import exp_so3
 from .wnoj_prior import orientation_residual, residual_jacobians, whitener
 
 ACCEL_UNITS = ('none', 'disabled', 'g', 'mps2')
+# Factor types this module can register. There is deliberately no acceleration factor:
+# accelerometer channels are never read by the smoother (second guard after the CLI).
+FACTOR_TYPES = ('wnoj_prior', 'gyro', 'orientation')
+ACCEL_FACTOR_REGISTERED = False
+SOLVER_LOG = []          # per-process record of smooth() calls (iterations, convergence)
+ROT_TOL = 1e-7           # rad: converged when the largest orientation update is below this
 
 
 def check_accel_unit(accel_unit):
@@ -209,25 +215,46 @@ def gauss_newton_step(problem, r, w, a, damping=1e-9, solver='banded'):
     return d * y, {'cost': cost, 'nnz_normal_matrix': nnz}
 
 
-def smooth(problem, r0, w0=None, a0=None, max_iter=15, tol=1e-9, accel_unit='none',
+def registered_factors(problem):
+    """Factor types present in a problem (never includes an acceleration factor)."""
+    out = ['wnoj_prior']
+    if problem.gyro is not None:
+        out.append('gyro')
+    out += ['orientation'] * len(problem.orientation)
+    assert set(out) <= set(FACTOR_TYPES)
+    return out
+
+
+def smooth(problem, r0, w0=None, a0=None, max_iter=15, tol=ROT_TOL, accel_unit='none',
            solver='banded'):
-    """Gauss-Newton MAP estimate; returns (R, w, a, info)."""
+    """Gauss-Newton MAP estimate; returns (R, w, a, info).
+
+    Converged when the largest orientation update falls below `tol` (rad) within
+    max_iter; failed when the state becomes non-finite. Each call is appended to
+    SOLVER_LOG.
+    """
     check_accel_unit(accel_unit)
     t = r0.shape[0]
     r = np.array(r0, dtype=float, copy=True)
     w = np.zeros((t, 3)) if w0 is None else np.array(w0, dtype=float, copy=True)
     a = np.zeros((t, 3)) if a0 is None else np.array(a0, dtype=float, copy=True)
-    costs, nnz = [], 0
+    costs, nnz, converged, last = [], 0, False, np.inf
     for it in range(max_iter):
         delta, info = gauss_newton_step(problem, r, w, a, solver=solver)
         costs.append(info['cost'])
         nnz = info['nnz_normal_matrix']
         r, w, a = retract(r, w, a, delta)
-        if np.max(np.abs(delta)) < tol:
+        last = float(np.max(np.abs(delta.reshape(-1, 9)[:, 0:3])))
+        if last < tol:
+            converged = True
             break
     costs.append(normal_blocks(problem, r, w, a)[3])
-    return r, w, a, {'iterations': it + 1, 'cost': costs, 'nnz_normal_matrix': nnz,
-                     'unknowns': 9 * t}
+    failed = not (np.all(np.isfinite(r)) and np.all(np.isfinite(w)) and np.isfinite(costs[-1]))
+    SOLVER_LOG.append((it + 1, converged, failed, last))
+    return r, w, a, {'iterations': it + 1, 'converged': converged, 'failed': failed,
+                     'final_rotation_update_rad': last,
+                     'cost': costs, 'nnz_normal_matrix': nnz, 'unknowns': 9 * t,
+                     'factors': registered_factors(problem)}
 
 
 def initial_rates(r, dt):

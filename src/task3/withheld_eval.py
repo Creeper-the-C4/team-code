@@ -39,7 +39,8 @@ class Params:
     sigma_gyro: float = 0.05     # rad/s, nominal
     sigma_ori_deg: float = 2.0   # own-quaternion factor, nominal
     factors: str = 'both'        # 'gyro' | 'orientation' | 'both' for observed segments
-    max_iter: int = 8
+    max_iter: int = 12
+    max_iter_withheld: int = 30  # joint-factor problems converge linearly (large residuals)
 
 
 def rotations(values, names):
@@ -142,9 +143,15 @@ def reconstruct(smoothed, observed, withheld, stats, params, dt=1 / FS):
             if m == 'wnoj':
                 factors = [OrientationFactor(rn @ mn, params.joint_scale * s_)
                            for rn, mn, s_, _ in tg]
+                if len(tg) > 1:     # start at the precision-weighted chordal mean of the targets
+                    acc = sum((rn @ mn) / np.mean(s_ ** 2) for rn, mn, s_, _ in tg)
+                    u, _, vt = np.linalg.svd(acc)
+                    fix = np.ones((len(acc), 3))
+                    fix[:, 2] = np.sign(np.linalg.det(u @ vt))
+                    r = (u * fix[:, None, :]) @ vt
                 w0, a0 = initial_rates(r, dt)
                 prob = SegmentProblem(dt=dt, qc=params.qc, orientation=factors)
-                r, wv, _, _ = smooth(prob, r, w0, a0, max_iter=params.max_iter)
+                r, wv, _, _ = smooth(prob, r, w0, a0, max_iter=params.max_iter_withheld)
             else:
                 wv = initial_rates(r, dt)[0]
             est[w] = (r, wv)

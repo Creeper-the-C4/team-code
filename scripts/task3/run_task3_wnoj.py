@@ -41,8 +41,9 @@ sys.path.insert(0, str(REPO / 'scripts' / 'preprocessing'))
 
 from independent_data_access import SENSORS, SubjectData  # noqa: E402
 from task3.kinematic_tree import bone_lengths, calibrate_bones  # noqa: E402
+from task3 import smoother  # noqa: E402
 from task3.smoother import check_accel_unit  # noqa: E402
-from task3.so3_lie import chordal_mean  # noqa: E402
+from task3.so3_lie import chordal_mean, geodesic_deg, quat_xyzw_to_rot  # noqa: E402
 from task3.withheld_eval import (METHODS, Params, evaluate_chunk, joint_statistics,  # noqa: E402
                                  needed_neighbours, rotations, smooth_observed, summarise)
 
@@ -156,19 +157,27 @@ def build_schemes(args, fold):
 # ----------------------------------------------------------------------------- workers
 def eval_subject(job):
     root, subject, schemes, stats, params, bones, cfg = job
-    rec = {}
+    rec, resid = {}, {}
+    smoother.SOLVER_LOG.clear()
     for act, v, lab in subject_chunks(root, subject, cfg['max_trials'], cfg['max_seconds'],
                                       cfg['chunk_seconds']):
         # each sensor is smoothed from its own channels only, so one cache serves all schemes
         need = sorted({n for obs, wh in schemes.values() for n in needed_neighbours(obs, wh)})
         cache = smooth_observed(v[:, [SENSORS.index(n) for n in need], :], need, need, params)
+        for n, (r_hat, w_hat) in cache.items():      # observed-segment fit residuals
+            i = SENSORS.index(n)
+            d = resid.setdefault(n, {'gyro': [], 'ori': []})
+            d['gyro'].append(np.linalg.norm(w_hat - v[:, i, 3:6], axis=1).astype(np.float32))
+            d['ori'].append(geodesic_deg(quat_xyzw_to_rot(v[:, i, 6:10]), r_hat).astype(np.float32))
         for name, (obs, wh) in schemes.items():
             out = evaluate_chunk(v, lab, SENSORS, obs, wh, stats, params, bones, smoothed=cache)
             for key in ('v1', 'v2', 'v3'):
                 for (m, s), arr in out[key].items():
                     rec.setdefault((name, key, m, s), []).append(arr)
             rec.setdefault((name, 'labels'), []).append(out['labels'])
-    return subject, {k: np.concatenate(v) for k, v in rec.items()}
+    extra = {'resid': {n: {k: np.concatenate(x) for k, x in d.items()} for n, d in resid.items()},
+             'solver': np.array(smoother.SOLVER_LOG, dtype=float).reshape(-1, 4)}
+    return subject, {k: np.concatenate(v) for k, v in rec.items()}, extra
 
 
 def calib_subject(job):
@@ -251,7 +260,8 @@ def main(argv=None):
     ap.add_argument('--body-dims')
     ap.add_argument('--out', default='results/task3_v4')
     ap.add_argument('--fold-subsets-json')
-    ap.add_argument('--subset-k', type=int, nargs='*', default=[3, 4, 5, 6])
+    ap.add_argument('--subset-k', '--h3-k', dest='subset_k', type=int, nargs='*',
+                    default=[3, 4, 5, 6])
     ap.add_argument('--observed-sensors', nargs='*')
     ap.add_argument('--withhold', nargs='*')
     ap.add_argument('--schemes', nargs='*', default=['H1'])
@@ -270,7 +280,7 @@ def main(argv=None):
     ap.add_argument('--resume', action='store_true')
     ap.add_argument('--overwrite', action='store_true')
     args = ap.parse_args(argv)
-    check_accel_unit(args.accel_unit)
+    check_accel_unit(args.accel_unit)           # guard 1 (CLI); guard 2 lives in smoother
     if args.h1_sensors == ['all']:
         args.h1_sensors = list(SENSORS)
     out = Path(args.out)
@@ -290,6 +300,7 @@ def main(argv=None):
            'chunk_seconds': args.chunk_seconds}
     t_start = time.time()
     fold_info, rows_subject, pooled, ablation = [], [], {}, {}
+    resid_all, solver_all = {}, []
     for fold in folds:
         part = parts / f"fold{fold['fold']}.npz"
         meta = parts / f"fold{fold['fold']}.json"
@@ -299,6 +310,7 @@ def main(argv=None):
             data = dict(np.load(part, allow_pickle=True))
             subj_res = data['subj_res'].item()
             abl = data['ablation'].item()
+            extras = data['extras'].item()
         else:
             stats = joint_statistics(training_samples(args.data_root, fold['train'],
                                                       max(1, args.max_trials_per_activity)))
@@ -314,7 +326,9 @@ def main(argv=None):
             params = Params(qc=qc, joint_scale=lam, factors=args.factors)
             jobs = [(args.data_root, s, schemes, stats, params,
                      subject_bones(args.data_root, s, dims), cfg) for s in fold['test']]
-            subj_res = dict(pool_map(eval_subject, jobs, args.workers))
+            results = pool_map(eval_subject, jobs, args.workers)
+            subj_res = {r[0]: r[1] for r in results}
+            extras = {r[0]: r[2] for r in results}
             abl = {}
             if not args.no_ablation:
                 res = pool_map(ablation_subject, [(args.data_root, s, stats, args.h1_sensors[:3],
@@ -329,9 +343,14 @@ def main(argv=None):
                     'train': fold['train'], 'validation': fold['validation'], 'test': fold['test'],
                     'schemes': {k: {'observed': v[0], 'withheld': v[1]} for k, v in schemes.items()}}
             np.savez(part, subj_res=np.array(subj_res, dtype=object),
-                     ablation=np.array(abl, dtype=object))
+                     ablation=np.array(abl, dtype=object), extras=np.array(extras, dtype=object))
             meta.write_text(json.dumps(info, indent=1))
         fold_info.append(info)
+        for ex in extras.values():
+            solver_all.append(ex['solver'])
+            for n, d in ex['resid'].items():
+                for k, arr in d.items():
+                    resid_all.setdefault((n, k), []).append(arr)
         for subj, rec in subj_res.items():
             for key, arr in rec.items():
                 if key[1] == 'labels':
@@ -343,8 +362,9 @@ def main(argv=None):
                     v2 = rec.get((name, 'v2', m, s))
                     rows_subject.append({'scheme': name, 'subject': subj, 'fold': info['fold'],
                                          'sensor': s, 'method': m, 'n_frames': int(arr.size),
-                                         'v1_median_deg': float(np.median(arr)),
-                                         'v1_rmse_deg': float(np.sqrt(np.mean(arr ** 2))),
+                                         'median_deg': float(np.median(arr)),
+                                         'rmse_deg': float(np.sqrt(np.mean(arr ** 2))),
+                                         'p95_deg': float(np.percentile(arr, 95)),
                                          'v2_rmse_rad_s': float(np.sqrt(np.mean(v2 ** 2)))})
         for k, v in abl.items():
             ablation.setdefault(k, {'v1': [], 'self': []})
@@ -359,7 +379,7 @@ def main(argv=None):
         entry = summary.setdefault(name, {}).setdefault(s, {}).setdefault(m, {})
         entry[metric] = summarise(arr)
         if metric == 'v1':
-            subj_meds = [r['v1_median_deg'] for r in rows_subject
+            subj_meds = [r['median_deg'] for r in rows_subject
                          if r['scheme'] == name and r['sensor'] == s and r['method'] == m]
             entry['v1']['subject_equal_median'] = float(np.mean(subj_meds))
             labels = np.concatenate(pooled[(name, 'labels', m, s)])
@@ -369,9 +389,9 @@ def main(argv=None):
                 rows_activity.append({'scheme': name, 'sensor': s, 'method': m,
                                       'activity': ACTIVITY.get(int(act), str(act)),
                                       'n_frames': int(sel.sum()),
-                                      'v1_median_deg': float(np.median(arr[sel])),
-                                      'v1_rmse_deg': float(np.sqrt(np.mean(arr[sel] ** 2))),
-                                      'v1_p95_deg': float(np.percentile(arr[sel], 95)),
+                                      'median_deg': float(np.median(arr[sel])),
+                                      'rmse_deg': float(np.sqrt(np.mean(arr[sel] ** 2))),
+                                      'p95_deg': float(np.percentile(arr[sel], 95)),
                                       'v2_rmse_rad_s': float(np.sqrt(np.mean(v2[sel] ** 2)))})
     rows_ablation = []
     for (mode, horizon, s), v in sorted(ablation.items()):
@@ -381,19 +401,69 @@ def main(argv=None):
                               'n_frames': int(v1.size),
                               'withheld_v1_median_deg': float(np.median(v1)) if v1.size else None,
                               'neighbour_self_median_deg': float(np.median(sf)) if sf.size else None})
+    input_masks = {str(f['fold']): {k: v['observed'] for k, v in f['schemes'].items()}
+                   for f in fold_info}
+    rows_sensor = []
+    for name, per_s in summary.items():
+        for s, per_m in per_s.items():
+            for m in METHODS:
+                if m in per_m and 'v1' in per_m[m]:
+                    e = per_m[m]
+                    masks = {'+'.join(f[name]) for f in input_masks.values() if name in f}
+                    rows_sensor.append({'scheme': name, 'withheld_sensor': s, 'method': m,
+                                        'input_mask': masks.pop() if len(masks) == 1
+                                        else 'per-fold (see summary.json input_masks)',
+                                        'n_frames': e['v1']['n'], 'rmse_deg': e['v1']['rmse'],
+                                        'median_deg': e['v1']['median'], 'p95_deg': e['v1']['p95'],
+                                        'subject_equal_median_deg': e['v1']['subject_equal_median'],
+                                        'v2_rmse_rad_s': e['v2']['rmse']})
+    rows_resid, resid_summary = [], {}
+    for n in sorted({k[0] for k in resid_all}):
+        g = np.concatenate(resid_all[(n, 'gyro')])
+        o = np.concatenate(resid_all[(n, 'ori')])
+        row = {'sensor': n, 'n_frames': int(g.size),
+               'gyro_residual_rmse_rad_s': float(np.sqrt(np.mean(g ** 2))),
+               'gyro_residual_median_rad_s': float(np.median(g)),
+               'orientation_residual_rmse_deg': float(np.sqrt(np.mean(o ** 2))),
+               'orientation_residual_median_deg': float(np.median(o)),
+               'orientation_residual_p95_deg': float(np.percentile(o, 95))}
+        rows_resid.append(row)
+        resid_summary[n] = row
+    log = np.concatenate(solver_all) if solver_all else np.zeros((0, 4))
+    solver = {'n_calls': int(len(log)),
+              'convergence_rate': float(log[:, 1].mean()) if len(log) else None,
+              'failure_rate': float(log[:, 2].mean()) if len(log) else None,
+              'mean_iterations': float(log[:, 0].mean()) if len(log) else None,
+              'max_iterations': int(log[:, 0].max()) if len(log) else None,
+              'final_rotation_update_rad_median': float(np.median(log[:, 3])) if len(log) else None,
+              'final_rotation_update_rad_max': float(np.max(log[:, 3])) if len(log) else None,
+              'convergence_rule': f'largest orientation update < {smoother.ROT_TOL:g} rad '
+                                  f'within max_iter; failure = non-finite state',
+              'scope': 'evaluation smoothing calls on test participants'}
     out.mkdir(parents=True, exist_ok=True)
+    write_csv(out / 'per_sensor_metrics.csv', rows_sensor)
+    write_csv(out / 'observed_residuals.csv', rows_resid)
     write_csv(out / 'per_activity_metrics.csv', rows_activity)
     write_csv(out / 'per_subject_metrics.csv', rows_subject)
     write_csv(out / 'ablation_summary.csv', rows_ablation)
     result = {'reference_type': REFERENCE,
               'note': 'Withheld-sensor reference: the hidden sensor\'s own recording, '
                       'not an independent optical ground truth.',
-              'accel_unit': args.accel_unit, 'config': vars(args), 'folds': fold_info,
+              'accel_unit': 'none', 'accel_unit_requested': args.accel_unit,
+              'accel_factor_registered': bool(smoother.ACCEL_FACTOR_REGISTERED),
+              'config': vars(args), 'folds': fold_info, 'input_masks': input_masks,
+              'solver': solver, 'observed_residuals': resid_summary,
               'metrics': summary, 'runtime_s': round(time.time() - t_start, 1)}
     (out / 'summary.json').write_text(json.dumps(result, indent=1, default=str), encoding='utf-8')
     lines = ['# Task 3 WNOJ withheld-sensor reconstruction', '',
              f'Reference type: `{REFERENCE}` (not an optical ground truth). '
-             f'Acceleration factors: `{args.accel_unit}`. Runtime {result["runtime_s"]} s.', '',
+             'Acceleration factors: none (accel_factor_registered = false). '
+             f'Runtime {result["runtime_s"]} s.', '',
+             f"Solver: {solver['n_calls']} smoothing calls, convergence rate "
+             f"{fmt(solver['convergence_rate'])}, failure rate {fmt(solver['failure_rate'])}, "
+             f"mean iterations {fmt(solver['mean_iterations'], 2)}, max {solver['max_iterations']}, "
+             f"largest final orientation update {solver['final_rotation_update_rad_max']:.1e} rad.",
+             '',
              '| scheme | withheld | method | V1 median (deg) | V1 subject-equal median | V1 P95 | '
              'V2 RMSE (rad/s) |', '|---|---|---|---:|---:|---:|---:|']
     for name, per_s in summary.items():
@@ -426,8 +496,8 @@ def main(argv=None):
     lines += ['', 'Per-fold hyperparameters (chosen on validation participants): ' +
               ', '.join(f"fold {f['fold']}: qc={f['qc']:g}, joint_scale={f['joint_scale']:g}"
                         for f in fold_info),
-              '', 'Files: summary.json, per_activity_metrics.csv, per_subject_metrics.csv, '
-              'ablation_summary.csv.']
+              '', 'Files: summary.json, per_sensor_metrics.csv, per_activity_metrics.csv, '
+              'per_subject_metrics.csv, observed_residuals.csv, ablation_summary.csv.']
     (out / 'README.md').write_text('\n'.join(lines) + '\n', encoding='utf-8')
     print('\n'.join(lines))
     return 0

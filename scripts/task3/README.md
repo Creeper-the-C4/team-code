@@ -42,8 +42,14 @@ independent optical motion-capture ground truth.
 multiplier `joint_scale`. Each fold chooses them on its **validation** participants over the
 grid {1e2, 1e3, 1e4} × {0.5, 1, 2}. Test participants are evaluated once.
 
-**Acceleration.** Acceleration factors stay gated: `--accel-unit none|disabled` is the
-default, and `g` or `mps2` is refused until the P0 `diag_accel_unit.py` verdict.
+**Acceleration (two guards).** Acceleration factors stay gated until the P0
+`diag_accel_unit.py` verdict:
+1. **CLI:** `--accel-unit none|disabled` is the default; `g` or `mps2` is refused.
+2. **Factor registry:** `smoother.FACTOR_TYPES` contains no acceleration factor and
+   `ACCEL_FACTOR_REGISTERED = False`. No code path reads the accelerometer channels; a unit
+   test shows that writing NaN into every Acc channel leaves all outputs bitwise identical.
+
+`summary.json` echoes `"accel_unit": "none"` and `"accel_factor_registered": false`.
 
 ## Run on the cloud cache
 
@@ -61,7 +67,7 @@ $PY scripts/task3/run_task3_wnoj.py --data-root "$DATA" \
 |---|---|---|
 | `--schemes` | `H1` | Always runs. H1 withholds one sensor at a time (`--h1-sensors`, default Head, UpperBack, RightForeArm, LeftUpperArm, RightShank, LeftThigh; `all` for all 17) |
 | `--observed-sensors` / `--withhold` | — | H2: one fixed layout |
-| `--fold-subsets-json` | — | H3: each fold's Task 2 layout of size `--subset-k` (default 3 4 5 6), read from `run_sensor_selection.py` output, which prevents Task 2→3 cross-fold leakage |
+| `--fold-subsets-json` | — | H3: each fold's Task 2 layout `folds[str(fold)][str(k)]` of size `--h3-k` (alias `--subset-k`, default 3 4 5 6), read from `run_sensor_selection.py` output. Each fold reads only its own layout, which prevents Task 2→3 cross-fold leakage |
 | `--max-trials-per-activity` | 2 | Trials per activity per participant (0 = all) |
 | `--max-seconds-per-trial` | 30 | Seconds used per trial |
 | `--chunk-seconds` | 10 | Chunk length |
@@ -72,8 +78,17 @@ $PY scripts/task3/run_task3_wnoj.py --data-root "$DATA" \
 | `--resume` | off | Reuse finished folds from `_parts/` |
 | `--overwrite` | off | Recompute even if `summary.json` exists |
 
-**Outputs** (in `--out`, all small): `summary.json`, `per_activity_metrics.csv`,
-`per_subject_metrics.csv`, `ablation_summary.csv` and `README.md`. The ablation covers
+**Outputs** (in `--out`, all small):
+
+| File | Content |
+|---|---|
+| `summary.json` | Reference type, acceleration echo, per-fold hyperparameters, explicit `input_masks` per fold and scheme, solver diagnostics (`convergence_rate`, `failure_rate`, `mean_iterations`, `max_iterations`, largest final orientation update), observed-segment residuals, all metrics |
+| `per_sensor_metrics.csv` | Per scheme × withheld sensor × method: `input_mask`, `rmse_deg`, `median_deg`, `p95_deg`, subject-equal median, V2 RMSE |
+| `per_activity_metrics.csv` | Same metrics per activity |
+| `per_subject_metrics.csv` | Same metrics per participant |
+| `observed_residuals.csv` | `gyro_residual` (rad/s) and `orientation_residual` (deg) of the smoothed observed segments against their own recordings |
+| `ablation_summary.csv` | Drift over 2/5/10 s for gyro-only, orientation-only and both |
+| `README.md` | Generated summary | The ablation covers
 gyro-only, orientation-only and both, over 2, 5 and 10 s horizons. In gyro-only mode the
 first frame of each horizon is anchored to the measured quaternion. `_parts/*.npz` holds
 per-fold intermediates for `--resume`; `.npz` files are git-ignored.
@@ -97,10 +112,13 @@ The tests cover:
 - **Solvers:** banded, sparse and dense solves agree to < 1e-9.
 - **Scaling:** the normal matrix grows linearly in T.
 - **Smoother:** smoothing reduces orientation noise.
-- **Acceleration gate:** `--accel-unit` is gated.
+- **Acceleration gate:** `--accel-unit` is gated, and no acceleration factor is ever
+  registered or read (NaN accelerometer channels leave outputs unchanged).
 - **Withheld reconstruction:** it beats `copy_parent` on a known kinematic chain and does
   not depend on the withheld channels.
-- **H3 parsing:** layout files are parsed, including the Task 2 output format.
+- **H3 parsing:** layout files are parsed, including the Task 2 output format, and in a
+  CLI run each fold uses exactly its own `S_k`, with the withheld set equal to its
+  complement.
 - **CLI:** the command runs end to end on the synthetic fixture, `--resume` skips finished
   work, and `--accel-unit g` is refused.
 
@@ -113,4 +131,8 @@ The tests cover:
 - **Gyro and orientation factors:** treated as independent. The P0
   `diag_orientation_independence.py` result decides whether that assumption must be
   revisited.
+- **Solver convergence:** the strict criterion is an orientation update below 1e-7 rad.
+  Withheld segments with two disagreeing joint targets form large-residual problems, where
+  Gauss–Newton converges only linearly. They get up to 30 iterations, and the largest final
+  update is reported (about 1e-4 rad on the synthetic fixture, i.e. below 0.01°).
 - **Stage B:** the 6D Sensor-Dropout BiGRU is a separate optional step.

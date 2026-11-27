@@ -220,6 +220,29 @@ def test_withheld_reconstruction_beats_copy_parent_and_ignores_withheld_channels
     assert np.array_equal(a['wnoj']['RightShank'][0], b['wnoj']['RightShank'][0])
 
 
+def test_acceleration_factor_is_never_registered_or_read():
+    from task3 import smoother
+    from task3.withheld_eval import smooth_observed
+    assert smoother.ACCEL_FACTOR_REGISTERED is False
+    assert 'acceleration' not in smoother.FACTOR_TYPES
+    values, labels, names, _ = chain_trial(seed=4)
+    train = [{k: v[::5] for k, v in rotations(chain_trial(seed=5)[0], names).items()}]
+    stats = joint_statistics(train)
+    obs = [n for n in names if n != 'RightShank']
+    smoother.SOLVER_LOG.clear()
+    a = evaluate_chunk(values, labels, names, obs, ['RightShank'], stats, Params())
+    no_acc = values.copy()
+    no_acc[:, :, 0:3] = np.nan                   # accelerometer channels unusable everywhere
+    b = evaluate_chunk(no_acc, labels, names, obs, ['RightShank'], stats, Params())
+    for key in a['v1']:
+        assert np.array_equal(a['v1'][key], b['v1'][key])
+        assert np.array_equal(a['v2'][key], b['v2'][key])
+    assert smoother.SOLVER_LOG and all(not entry[2] for entry in smoother.SOLVER_LOG)
+    sm = smooth_observed(values[:, [names.index('RightThigh')]], ['RightThigh'], ['RightThigh'],
+                         Params())
+    assert set(sm) == {'RightThigh'}
+
+
 def test_rebuild_order_handles_withheld_chains():
     order = rebuild_order(['RightShoulder', 'RightUpperArm', 'RightForeArm'],
                           ['RightWrist', 'UpperBack', 'LowerBack'])
@@ -273,11 +296,44 @@ def test_cli_end_to_end_and_resume(fixture_root, tmp_path):
     assert summary['accel_unit'] == 'none'
     assert 'H1:RightShank' in summary['metrics']
     assert any(k.startswith('H2:') for k in summary['metrics'])
-    for f in ('per_activity_metrics.csv', 'per_subject_metrics.csv', 'ablation_summary.csv',
-              'README.md'):
+    assert summary['accel_factor_registered'] is False
+    assert 0 <= summary['solver']['failure_rate'] <= summary['solver']['convergence_rate'] + 1
+    assert summary['solver']['max_iterations'] >= 1
+    assert summary['input_masks']['0']['H1:RightShank'] == [
+        s for s in summary['folds'][0]['schemes']['H1:RightShank']['observed']]
+    for f in ('per_sensor_metrics.csv', 'per_activity_metrics.csv', 'per_subject_metrics.csv',
+              'observed_residuals.csv', 'ablation_summary.csv', 'README.md'):
         assert (out / f).exists()
+    header = (out / 'per_sensor_metrics.csv').read_text().splitlines()[0]
+    for col in ('rmse_deg', 'median_deg', 'p95_deg', 'input_mask'):
+        assert col in header
     again = subprocess.run(cmd, capture_output=True, text=True)
     assert again.returncode == 0 and 'skipping' in again.stdout
     bad = subprocess.run(cmd + ['--accel-unit', 'g', '--out', str(tmp_path / 'g')],
                          capture_output=True, text=True)
     assert bad.returncode != 0 and 'gated' in bad.stderr
+
+
+def test_cli_h3_reads_only_its_own_fold_layout(fixture_root, tmp_path):
+    from independent_data_access import SENSORS
+    layouts = {'0': {'3': ['LowerBack', 'RightThigh', 'RightFoot'],
+                     '4': ['LowerBack', 'RightThigh', 'RightFoot', 'Head']},
+               '1': {'3': ['UpperBack', 'LeftThigh', 'LeftFoot']}}
+    sub = tmp_path / 'per_fold_selected_subsets.json'
+    sub.write_text(json.dumps({'family': 'F1H', 'folds': layouts}))
+    out = tmp_path / 'h3'
+    subprocess.run([sys.executable, str(REPO / 'scripts' / 'task3' / 'run_task3_wnoj.py'),
+                    '--data-root', str(fixture_root), '--splits', str(fixture_root / 'splits.json'),
+                    '--out', str(out), '--folds', '0', '1', '--schemes', 'H3',
+                    '--fold-subsets-json', str(sub), '--h3-k', '3', '--no-calibrate',
+                    '--no-ablation', '--max-trials-per-activity', '1',
+                    '--max-seconds-per-trial', '10', '--workers', '1', '--accel-unit', 'disabled'],
+                   check=True, capture_output=True)
+    summary = json.loads((out / 'summary.json').read_text())
+    assert summary['accel_unit'] == 'none' and summary['accel_unit_requested'] == 'disabled'
+    for fold in ('0', '1'):
+        assert summary['input_masks'][fold] == {'H3:k3': layouts[fold]['3']}
+        info = next(f for f in summary['folds'] if str(f['fold']) == fold)
+        withheld = info['schemes']['H3:k3']['withheld']
+        assert set(withheld) == set(SENSORS) - set(layouts[fold]['3'])
+        assert not set(withheld) & set(info['schemes']['H3:k3']['observed'])
