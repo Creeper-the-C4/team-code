@@ -2,22 +2,23 @@
 
 本仓库（`Creeper-the-C4/team-code`）用于沉淀我们团队在 **2026“认证杯”ICM C 题** 中的完整调研、文献审计、数学建模文档、可复现代码与实验结果。
 
-## 最新进度 2026年11月27日
+## 最新进度 2026年11月28日（V4.0 冻结规范 + P0/WP3 落库）
 
-已完成独立数据预处理，并完成 **Task 1 LightGBM全量六折基线测试**。Task 1的进一步对照与改进、Task 2传感器精简、Task 3全身重建及Task 4新增测量设计继续推进。
+- **V4.0 工程规范与云端交接手册已就绪**：服务器重启后请先按 [docs/07_v4_engineering_spec_and_cloud_handoff.md](docs/07_v4_engineering_spec_and_cloud_handoff.md) 执行三个 P0 只读实测诊断脚本（[scripts/diagnostics/README.md](scripts/diagnostics/README.md)），裁决加速度语义/单位与协议细节后再跑全量实验。
+- **Task 4（WP3）脊柱可观性离线包已合入**：包含多节段运动学与信息矩阵代码（`src/spine/`）、静态/轨迹慢模态与三组敏感性扫描结果及 3 张核心图表（[results/spine_offline_v1/summary.md](results/spine_offline_v1/summary.md)），P0 + WP3 共 **44/44 项单元测试通过**（`results/spine_offline_v1/pytest_verification.log`）。
+- **Task 1 LightGBM 六折探索性基线（2026-11-27）** 保持冻结作为对照：
 
-| 本轮测试指标 | 结果 |
+| 基线测试指标（`lightgbm_baseline_v1`） | 结果 |
 |---|---:|
-| 合并测试13类Macro-F1 | 0.9215 |
+| 合并测试 13 类 Macro-F1 | 0.9215 |
+| 被试等权 13 类 Macro-F1（主评估补充口径） | 0.8857 |
 | 合并测试准确率 | 93.35% |
-| 六折13类Macro-F1均值与标准差 | 0.9206 ± 0.0325 |
-| 测试参与者与窗口 | 30人 220,702个2秒窗 |
+| 六折 13 类 Macro-F1 均值与标准差 | 0.9206 ± 0.0325 |
+| 测试参与者与窗口 | 30 人，220,702 个 2 秒窗 |
 
-每折20人训练、5人验证、5人测试；固定680项特征与LightGBM参数，仅用内层验证参与者早停。每位参与者恰好测试一次，全部窗口无重复覆盖。主要薄弱类别为Others（F1 0.6177）及中速步行（F1 0.8359）。
+入口：[V4.0 云端交接手册](docs/07_v4_engineering_spec_and_cloud_handoff.md) · [P0 诊断说明](scripts/diagnostics/README.md) · [Task 4 脊柱可观性结果](results/spine_offline_v1/summary.md) · [Task 1 基线说明](docs/06_task1_lightgbm_baseline.md) · [数据预处理快照](docs/05_independent_preprocessing_progress.md)
 
-入口：[Task 1测试说明](docs/06_task1_lightgbm_baseline.md) · [实际指标与图表](results/task1/lightgbm_baseline_v1/README.md) · [测试脚本](scripts/task1/README.md) · [数据预处理快照](docs/05_independent_preprocessing_progress.md)
-
-下方V3.0内容仍为研究路线，不能视为所有方法都已实现。加速度单位分歧保持原有记录，未额外乘9.81或去重力。
+> **关键红线**：加速度单位分歧在云端运行 `scripts/diagnostics/diag_accel_unit.py` 完成实测裁决前，**不得**盲乘 `9.81`、重复去重力或在 Task 3 中启用 SI 单位加速度因子。
 
 ## 核心研究主线（V3.0）
 **人体运动的多尺度可观测性与最小传感器设计**（$\mathrm{Measurement} \to \mathrm{Representation} \to \mathrm{Observability} \to \mathrm{Inference}$）：
