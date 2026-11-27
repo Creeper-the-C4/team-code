@@ -3,7 +3,7 @@
 Writes <root>/subjects/PXX/{signals.npy, labels.npy, trials.parquet,
 windows_2s.parquet, windows_4s.parquet, complete.json} and <root>/splits.json.
 Signals come from simple world-frame kinematics with a known ground truth:
-free acceleration stored in a chosen unit (g or m/s^2), world-frame gyro in
+acceleration stored as free acceleration in g or m/s^2, or as specific force in g, world-frame gyro in
 rad/s, xyzw quaternions with random sign flips, an exact knee hinge, ballistic
 jumps, and feet that are stationary in stance. Never use it for results.
 """
@@ -150,7 +150,7 @@ def simulate(label, dur, rng, legs, cadence_factor):
     return pos, rot
 
 
-def to_signals(pos, rot, rng, acc_scale, smooth_frames, gyro_noise, wobble):
+def to_signals(pos, rot, rng, acc_scale, smooth_frames, gyro_noise, wobble, add_gravity=False):
     n = next(iter(pos.values())).shape[0]
     out = np.zeros((n, len(SENSORS), 10), dtype=np.float32)
     for i, name in enumerate(SENSORS):
@@ -159,6 +159,8 @@ def to_signals(pos, rot, rng, acc_scale, smooth_frames, gyro_noise, wobble):
             k = np.ones(smooth_frames) / smooth_frames
             a = np.stack([np.convolve(a[:, j], k, mode='same') for j in range(3)], axis=1)
         a += rng.normal(0, 0.05, a.shape)
+        if add_gravity:                 # specific force: gravity not removed (+g on Y at rest)
+            a[:, 1] += G
         r = rot[name]
         dr = np.gradient(r, axis=0) * FS
         w_hat = np.einsum('nij,nkj->nik', dr, r)              # R_dot R^T
@@ -199,7 +201,8 @@ def window_table(subject, trials, labels, width):
 def build(root, subjects=(1, 2, 3, 4), acc_unit='g', smooth_frames=0, seed=0,
           gyro_noise=0.02, wobble=0.0):
     root = Path(root)
-    acc_scale = G if acc_unit == 'g' else 1.0
+    acc_scale = 1.0 if acc_unit == 'mps2' else G
+    add_gravity = acc_unit == 'specific_force_g'
     rng = np.random.default_rng(seed)
     for subject in subjects:
         legs = (rng.uniform(0.42, 0.5), rng.uniform(0.38, 0.45))
@@ -207,7 +210,7 @@ def build(root, subjects=(1, 2, 3, 4), acc_unit='g', smooth_frames=0, seed=0,
         sig, lab, trials, start = [], [], [], 0
         for k, (label, dur) in enumerate(PLAN):
             pos, rot = simulate(label, dur, rng, legs, cadence)
-            s = to_signals(pos, rot, rng, acc_scale, smooth_frames, gyro_noise, wobble)
+            s = to_signals(pos, rot, rng, acc_scale, smooth_frames, gyro_noise, wobble, add_gravity)
             labels = np.full(len(s), label, dtype=np.int8)
             if k % 3 == 1:
                 labels[:int(2 * FS)] = 0          # leading transition labelled Others
@@ -246,7 +249,7 @@ def build(root, subjects=(1, 2, 3, 4), acc_unit='g', smooth_frames=0, seed=0,
 def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument('--root', required=True)
-    ap.add_argument('--acc-unit', choices=['g', 'mps2'], default='g')
+    ap.add_argument('--acc-unit', choices=['g', 'mps2', 'specific_force_g'], default='g')
     ap.add_argument('--smooth-frames', type=int, default=0)
     ap.add_argument('--wobble', type=float, default=0.0)
     ap.add_argument('--seed', type=int, default=0)

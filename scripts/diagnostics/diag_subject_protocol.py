@@ -12,7 +12,12 @@
    Autocorrelation period with parabolic interpolation on 8 s chunks; thigh
    excursion per stride; dimensionless step frequency f*sqrt(L/g) when leg
    lengths are given. Checks whether slow < moderate < brisk holds per subject.
-5. Optional: where misclassified windows of one class sit inside their trials,
+5. Kinematic walking speed v_hat = 2 L sin(dtheta/2) * f_step (L = thigh +
+   shank length, dtheta = thigh excursion) checked against the fixed
+   treadmill speeds of the protocol: slow/moderate/brisk = 0.9/1.2/1.5 m/s
+   (Feng et al. 2026). The estimator is an inverted-pendulum approximation
+   and must be reported as an estimate; the belt speed is the reference.
+6. Optional: where misclassified windows of one class sit inside their trials,
    given an out-of-fold prediction table (--oof).
 """
 import argparse
@@ -26,6 +31,7 @@ from common import (ACTIVITY, FS, G, GYR, QUAT, SENSORS, SubjectData, autocorr_p
                     robust, write_report)
 
 WALK = (4, 5, 6)
+TREADMILL_MPS = {4: 0.9, 5: 1.2, 6: 1.5}      # protocol belt speeds (Feng et al. 2026)
 CHUNK = int(8 * FS)
 
 
@@ -154,6 +160,16 @@ def run(root, splits_path, subjects=None, body_dims=None, oof=None, max_trials=3
                                            else bool(f[0] < f[1] < f[2]))
         if subj in legs and all(x is not None for x in f):
             cad['dimensionless_step_freq'] = [x * np.sqrt(legs[subj] / G) for x in f]
+            speeds = {}
+            for k in WALK:
+                c = cad[ACTIVITY[k]]
+                fk, ex = c['step_freq_hz']['median'], c['thigh_excursion_deg']['median']
+                if fk is not None and ex is not None:
+                    v_hat = 2 * legs[subj] * np.sin(np.radians(ex) / 2) * fk
+                    speeds[ACTIVITY[k]] = {'v_hat_mps': float(v_hat),
+                                           'belt_mps': TREADMILL_MPS[k],
+                                           'ratio': float(v_hat / TREADMILL_MPS[k])}
+            cad['kinematic_speed'] = speeds
         cadence[subj] = cad
     batches = {}
     for subj, s in structure.items():
@@ -178,6 +194,15 @@ def run(root, splits_path, subjects=None, body_dims=None, oof=None, max_trials=3
         'walking_cadence': cadence,
         'non_monotonic_subjects': [s for s, c in cadence.items()
                                    if c['monotonic_slow_mod_brisk'] is False],
+        'treadmill_speed_check': {
+            ACTIVITY[k]: {'belt_mps': TREADMILL_MPS[k],
+                          'v_hat_mps': robust([c['kinematic_speed'][ACTIVITY[k]]['v_hat_mps']
+                                               for c in cadence.values()
+                                               if ACTIVITY[k] in c.get('kinematic_speed', {})]),
+                          'ratio': robust([c['kinematic_speed'][ACTIVITY[k]]['ratio']
+                                           for c in cadence.values()
+                                           if ACTIVITY[k] in c.get('kinematic_speed', {})])}
+            for k in WALK} if legs else None,
     }
     if oof:
         report['rowing_to_sitting_position'] = oof_localisation(oof, root, 12, 2)
@@ -201,6 +226,13 @@ def markdown(rep):
         lines.append(f"| {s} | " + ' | '.join('-' if x is None else f'{x:.3f}' for x in f)
                      + f" | {c['monotonic_slow_mod_brisk']} |")
     lines += ['', f"Non-monotonic subjects: {rep['non_monotonic_subjects']}"]
+    if rep.get('treadmill_speed_check'):
+        lines += ['', '## Kinematic speed vs treadmill belt speed', '',
+                  '| class | belt (m/s) | v_hat median (m/s) | ratio median | ratio MAD |',
+                  '|---|---:|---:|---:|---:|']
+        for k, v in rep['treadmill_speed_check'].items():
+            lines.append(f"| {k} | {v['belt_mps']} | {v['v_hat_mps']['median']} | "
+                         f"{v['ratio']['median']} | {v['ratio']['mad']} |")
     return '\n'.join(lines) + '\n'
 
 

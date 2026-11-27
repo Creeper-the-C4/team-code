@@ -36,6 +36,8 @@ def test_fixture_matches_loader_layout(g_root):
 def test_accel_unit_g(g_root):
     rep = diag_accel_unit.run(str(g_root))
     assert rep['decision']['verdict'] == 'g'
+    assert rep['decision']['T1_hypothesis'] == 'g'
+    assert abs(rep['T1_segment_mean_ratio']['median']) < 0.10
     assert abs(rep['T1_flight_plateau']['median'] + 1.0) < 0.05
     assert 0.30 < rep['T2_implied_m']['g']['stairs_rise'] < 0.38          # 2 x 0.17 m
     assert 0.25 < rep['T3_knee_lever_arms_raw']['r1']['median'] * G < 0.45
@@ -50,7 +52,14 @@ def test_accel_unit_mps2(mps2_root):
 def test_accel_unit_never_flips_under_heavy_smoothing(tmp_path):
     root = build(tmp_path, subjects=(1,), acc_unit='g', smooth_frames=15, seed=3)
     rep = diag_accel_unit.run(str(root))
-    assert rep['decision']['verdict'] in ('g', 'unresolved')
+    assert rep['decision']['verdict'] in ('g', 'filtered_or_unresolved')
+
+
+def test_accel_unit_specific_force_is_a_third_hypothesis(tmp_path):
+    root = build(tmp_path, subjects=(1,), acc_unit='specific_force_g', seed=5)
+    rep = diag_accel_unit.run(str(root))
+    assert rep['decision']['T1_hypothesis'] == 'specific_force'
+    assert rep['decision']['verdict'] == 'specific_force'
 
 
 def test_orientation_independence_flags_hinge_perfect_quaternions(tmp_path):
@@ -70,6 +79,12 @@ def test_subject_protocol_cadence_and_split_audit(g_root, tmp_path):
     for c in rep['walking_cadence'].values():
         f = c['moderate_walking']['step_freq_hz']['median']
         assert 0.85 * meta['cadence_steps_per_s']['5'] < f < 1.15 * meta['cadence_steps_per_s']['5']
+    dims = tmp_path / 'dims.csv'
+    dims.write_text('subject,thigh_length_m,shank_length_m\n1,0.46,0.41\n2,0.44,0.40\n3,0.48,0.42\n')
+    rep = diag_subject_protocol.run(str(g_root), str(g_root / 'splits.json'), body_dims=str(dims))
+    v = [rep['treadmill_speed_check'][c]['v_hat_mps']['median']
+         for c in ('slow_walking', 'moderate_walking', 'brisk_walking')]
+    assert 0 < v[0] < v[1] < v[2]
     bad = json.loads((g_root / 'splits.json').read_text())
     bad['folds'][0]['train'].append(bad['folds'][0]['test'][0])
     (tmp_path / 'bad.json').write_text(json.dumps(bad))
