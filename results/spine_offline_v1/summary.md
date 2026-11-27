@@ -29,6 +29,29 @@ Settings: posture phase 0.5, orientation noise 2.0 deg/axis, bend noise 2.0 deg.
 | M3 | C2a | 21 | 4 | 4 | 30.42 | 21 | 4.63 | 1.84 | 4.25 | L1-L5 |
 | M3 | C2b | 21 | 7 | 7 | 49.17 | 21 | 5.23 | 3.04 | 4.25 | L1-L5 |
 
+## Rank metadata (per model and configuration)
+
+Bound: min(3n, 3 x (distinct IMU segments - 1) + bend channels); gauge = pelvis world orientation (marginalised).
+
+| model | config | state dim | measurement dim | gauge dim | rank upper bound | numerical rank | rank tolerance |
+|---|---|---:|---:|---:|---:|---:|---:|
+| M1 | C0 | 9 | 6 | 3 | 3 | 3 | 4.1e-07 |
+| M1 | C1 | 9 | 9 | 3 | 3 | 3 | 5.47e-07 |
+| M1 | C1p | 9 | 9 | 3 | 3 | 3 | 5.47e-07 |
+| M1 | C1pp | 9 | 9 | 3 | 6 | 6 | 8.21e-07 |
+| M2 | C0 | 12 | 6 | 3 | 3 | 3 | 8.21e-07 |
+| M2 | C1 | 12 | 9 | 3 | 6 | 6 | 8.21e-07 |
+| M2 | C1p | 12 | 9 | 3 | 3 | 3 | 1.09e-06 |
+| M2 | C1pp | 12 | 9 | 3 | 6 | 6 | 1.29e-06 |
+| M2 | C2a | 12 | 7 | 3 | 4 | 4 | 1.4e-06 |
+| M2 | C2b | 12 | 7 | 3 | 4 | 4 | 1.4e-06 |
+| M3 | C0 | 24 | 6 | 3 | 3 | 3 | 2.46e-06 |
+| M3 | C1 | 24 | 9 | 3 | 6 | 6 | 2.59e-06 |
+| M3 | C1p | 24 | 9 | 3 | 6 | 6 | 2.9e-06 |
+| M3 | C1pp | 24 | 9 | 3 | 6 | 6 | 3.44e-06 |
+| M3 | C2a | 24 | 7 | 3 | 4 | 4 | 5.23e-06 |
+| M3 | C2b | 24 | 10 | 3 | 7 | 7 | 3.06e-06 |
+
 ## Slow joint-trajectory information over one repetition (M3)
 
 Joint trajectories restricted to the first 6 cosine modes (slow posture changes); kappa = sigma_a tau^2 / L.
@@ -40,3 +63,11 @@ Joint trajectories restricted to the first 6 cosine modes (slow posture changes)
 | C0_plus_acc_kappa_0.1 | 126 | 47 | 28 | 7.98e+04 | 9.82e-05 |
 | C0_plus_acc_kappa_0.5 | 126 | 48 | 25 | 6.47e+03 | 1.63e-05 |
 | C0_plus_acc_kappa_2.0 | 126 | 49 | 22 | 2.92e+03 | 5.08e-06 |
+
+## Jacobian check (float64, central difference)
+
+| model | h=1e-05 | h=1e-06 | h=1e-07 |
+|---|---:|---:|---:|
+| M1 | 3.37e-12 | 2.68e-11 | 3.28e-10 |
+| M2 | 4.06e-12 | 4.63e-11 | 4.41e-10 |
+| M3 | 6.25e-12 | 7.93e-11 | 5.76e-10 |

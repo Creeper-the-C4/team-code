@@ -45,6 +45,29 @@ ranked with orientation sensors.
   onto the first 6 cosine modes (slow posture changes). Accelerations are dimensionless,
   `kappa = sigma_a * tau^2 / L`, until the dataset's acceleration unit is resolved.
 
+## Conventions
+
+- **Orientation residual.** `e_R(q) = Log(R_meas^T R_pred(q))^vee`, evaluated at the
+  linearisation point.
+- **Perturbations.** Pelvis orientation uses the right retraction `R Exp(d)`. Joint angles
+  are rotation vectors with an additive chart; the analytic Jacobian carries the SO(3)
+  right Jacobian.
+- **Log branch.** The branch near pi is never reached, because spine rotations stay well
+  below 60°.
+- **Units.** States are dimensionless radians. The trajectory analysis uses spine-span
+  length units and repetition time units, with kappa dimensionless.
+- **Information matrix.** `J^T R^-1 J` is the Gauss–Newton PSD approximation: exact at zero
+  residual, with second-order terms dropped.
+- **Rank metadata.** Every (model × configuration) records `state_dimension`,
+  `measurement_dimension`, `gauge_dimension` (3, the pelvis world orientation),
+  `theoretical_rank_upper_bound = min(3n, 3·(distinct IMU segments − 1) + bend channels)`,
+  `numerical_rank` and `rank_tolerance` (1e-9 × largest eigenvalue). The bound is attained
+  in all 16 representable cases (`summary.md`).
+- **Jacobian check.** float64 central differences at h = 1e-5, 1e-6, 1e-7 give a maximum
+  relative error of 3e-12 to 6e-10 (`jacobian_check.json`). The error grows as h shrinks,
+  which is the round-off (eps/h) regime, so the analytic Jacobian is exact to working
+  precision.
+
 ## Main predictions (`summary.md`, figures)
 
 1. **Orientation-only rank follows the analytic bounds.** C0 gives 3 for every model;
@@ -89,7 +112,9 @@ PYTHONPATH=src .venv/bin/python -m spine.run_offline --out results/spine_offline
 
 Tests:
 
-- Analytic orientation and position Jacobians match central differences (< 1e-6).
+- Analytic orientation and position Jacobians match central differences (< 1e-6), with a
+  float64 multi-step (1e-5, 1e-6, 1e-7) relative-error check.
+- The rank metadata bound holds and is attained.
 - The SO(3) right Jacobian matches a SymPy derivation.
 - Analytic rank bounds hold.
 - I_meas → 0 as noise → ∞.

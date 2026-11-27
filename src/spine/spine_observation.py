@@ -5,8 +5,10 @@ pelvis world-orientation right perturbation, joint rotation vectors, pelvis
 (L5/S1) world position. phi_P and p_P are nuisance parameters.
 
 Measurement models
-- IMU orientation on segment i: r = Log(Rbar_i^T R_i(x)); its Jacobian is the
-  segment orientation Jacobian G_i (analytic, from the SO(3) right Jacobian).
+- IMU orientation on segment i: e_R = Log(R_meas^T R_pred,i(x))^vee with
+  R_meas = R_pred,i(x_bar); its Jacobian is the segment orientation Jacobian
+  G_i (analytic, from the SO(3) right Jacobian). Pelvis orientation uses the
+  right retraction R Exp(d); joints use an additive rotation-vector chart.
 - Single-channel flexible bend sensor over a span: y = sum of the flexion (FE)
   components of the joints inside the span (integrated sagittal curvature;
   exact for planar bending, first order otherwise).
@@ -96,6 +98,48 @@ def orientation_jacobians(model, theta):
             tail = exps[j] @ tail
         g[:, 0:3] = tail.T                   # tail is now prod_{l<i} Exp(theta_l)
         out.append(g)
+    return out
+
+
+def numeric_orientation_jacobian(model, phi_p, theta, segment, h):
+    """float64 central difference of e_R for one segment (pelvis + joint columns).
+
+    Pelvis columns use the SO(3) right retraction R_P Exp(+-h e_k); joint
+    columns perturb the rotation-vector chart theta +- h e_k.
+    """
+    base = segment_rotations(model, phi_p, theta)[segment]
+    n = 3 + 3 * model.n_joints
+    jac = np.zeros((3, n))
+    for k in range(n):
+        res = []
+        for sgn in (1.0, -1.0):
+            if k < 3:
+                d = np.zeros(3)
+                d[k] = sgn * h
+                rots = [so3.exp(phi_p) @ so3.exp(d)]
+                for j in range(model.n_joints):
+                    rots.append(rots[-1] @ so3.exp(theta[j]))
+                r = rots[segment]
+            else:
+                th = np.array(theta, dtype=np.float64, copy=True)
+                th.flat[k - 3] += sgn * h
+                r = segment_rotations(model, phi_p, th)[segment]
+            res.append(so3.log(base.T @ r))
+        jac[:, k] = (res[0] - res[1]) / (2 * h)
+    return jac
+
+
+def jacobian_relative_errors(model, phi_p, theta, steps=(1e-5, 1e-6, 1e-7)):
+    """max over segments of ||J_num - J_ana||_F / ||J_ana||_F for each step size."""
+    gs = orientation_jacobians(model, theta)
+    out = {}
+    for h in steps:
+        errs = []
+        for seg in range(len(model.segments)):
+            ana = gs[seg][:, :-3]
+            num = numeric_orientation_jacobian(model, phi_p, theta, seg, h)
+            errs.append(np.linalg.norm(num - ana) / np.linalg.norm(ana))
+        out[h] = float(max(errs))
     return out
 
 

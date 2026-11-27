@@ -6,6 +6,19 @@ orientation and, for trajectories, pelvis translation) are removed by a
 Schur complement, leaving information on the joint angles. Only I_meas
 quantifies what a sensor contributes; H_post shows what becomes solvable
 once the prior is added and must not be reported as a sensor gain.
+
+Conventions:
+- Orientation residual e_R(q) = Log(R_meas^T R_pred(q))^vee, evaluated at
+  the linearisation point (R_meas = R_pred(q_bar)), so J = d e_R / d q.
+- Perturbations: pelvis orientation uses the right retraction
+  R <- R Exp(d); joint angles are rotation vectors with an additive chart
+  theta <- theta + d (the analytic Jacobian carries the SO(3) right Jacobian).
+- The Log branch near pi is never reached (spine rotations are well below
+  60 deg; so3.log raises if it is).
+- States are dimensionless radians. In the trajectory analysis lengths are
+  in spine-span units and time in repetition units (kappa dimensionless).
+- J^T R^-1 J is the Gauss-Newton PSD approximation of the Hessian (exact at
+  zero residual; second-order residual terms are dropped).
 """
 import numpy as np
 
@@ -83,10 +96,34 @@ def static_information(model, config, phase=0.5, sigma_ori_deg=2.0, sigma_bend_d
     return i_meas, h_post, prior
 
 
+def rank_metadata(model, config, i_meas):
+    """Model-specific dimensions and the analytic rank bound of I_meas on joints.
+
+    IMUs on the same rigid segment span the same three directions and the
+    pelvis world orientation (gauge, 3) is always fixed by the L5 IMU, so
+    rank <= min(3n, 3 * (distinct IMU segments - 1) + bend channels).
+    """
+    sensors = config_sensors(model, config)
+    imus = [s for s in sensors if s.kind == 'imu']
+    n_bend = sum(s.kind == 'bend' for s in sensors)
+    distinct = len({s.segment for s in imus})
+    eig = np.clip(np.linalg.eigvalsh(i_meas), 0.0, None)
+    tol = REL_TOL * max(eig.max(), 1e-300)
+    return {
+        'state_dimension': 3 + 3 * model.n_joints,
+        'measurement_dimension': 3 * len(imus) + n_bend,
+        'gauge_dimension': 3,
+        'theoretical_rank_upper_bound': min(3 * model.n_joints, 3 * (distinct - 1) + n_bend),
+        'numerical_rank': int(np.sum(eig > tol)),
+        'rank_tolerance': float(tol),
+        'rank_tolerance_rule': f'{REL_TOL:g} x largest eigenvalue',
+    }
+
+
 def analyze_static(model, config, **kw):
     i_meas, h_post, prior = static_information(model, config, **kw)
     cov_prior = model.prior_cov()
-    out = {'model': model.name, 'config': config,
+    out = {'model': model.name, 'config': config, 'metadata': rank_metadata(model, config, i_meas),
            'meas': spectrum(i_meas), 'post': spectrum(h_post), 'qoi': {}}
     for name, levels in QOIS.items():
         c = model.qoi_vector(levels, FE)

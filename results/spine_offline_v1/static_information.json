@@ -18,6 +18,15 @@
    "config": "C0",
    "representable": true,
    "joint_dof": 6,
+   "metadata": {
+    "state_dimension": 9,
+    "measurement_dimension": 6,
+    "gauge_dimension": 3,
+    "theoretical_rank_upper_bound": 3,
+    "numerical_rank": 3,
+    "rank_tolerance": 4.1035079375146787e-07,
+    "rank_tolerance_rule": "1e-09 x largest eigenvalue"
+   },
    "meas": {
     "rank": 3,
     "n_well_determined": 3,
@@ -64,6 +73,15 @@
    "config": "C1",
    "representable": true,
    "joint_dof": 6,
+   "metadata": {
+    "state_dimension": 9,
+    "measurement_dimension": 9,
+    "gauge_dimension": 3,
+    "theoretical_rank_upper_bound": 3,
+    "numerical_rank": 3,
+    "rank_tolerance": 5.471343916686239e-07,
+    "rank_tolerance_rule": "1e-09 x largest eigenvalue"
+   },
    "meas": {
     "rank": 3,
     "n_well_determined": 3,
@@ -110,6 +128,15 @@
    "config": "C1p",
    "representable": true,
    "joint_dof": 6,
+   "metadata": {
+    "state_dimension": 9,
+    "measurement_dimension": 9,
+    "gauge_dimension": 3,
+    "theoretical_rank_upper_bound": 3,
+    "numerical_rank": 3,
+    "rank_tolerance": 5.471343916686239e-07,
+    "rank_tolerance_rule": "1e-09 x largest eigenvalue"
+   },
    "meas": {
     "rank": 3,
     "n_well_determined": 3,
@@ -156,6 +183,15 @@
    "config": "C1pp",
    "representable": true,
    "joint_dof": 6,
+   "metadata": {
+    "state_dimension": 9,
+    "measurement_dimension": 9,
+    "gauge_dimension": 3,
+    "theoretical_rank_upper_bound": 6,
+    "numerical_rank": 6,
+    "rank_tolerance": 8.207015875029359e-07,
+    "rank_tolerance_rule": "1e-09 x largest eigenvalue"
+   },
    "meas": {
     "rank": 6,
     "n_well_determined": 6,
@@ -214,6 +250,15 @@
    "config": "C0",
    "representable": true,
    "joint_dof": 9,
+   "metadata": {
+    "state_dimension": 12,
+    "measurement_dimension": 6,
+    "gauge_dimension": 3,
+    "theoretical_rank_upper_bound": 3,
+    "numerical_rank": 3,
+    "rank_tolerance": 8.207015875029366e-07,
+    "rank_tolerance_rule": "1e-09 x largest eigenvalue"
+   },
    "meas": {
     "rank": 3,
     "n_well_determined": 3,
@@ -274,6 +319,15 @@
    "config": "C1",
    "representable": true,
    "joint_dof": 9,
+   "metadata": {
+    "state_dimension": 12,
+    "measurement_dimension": 9,
+    "gauge_dimension": 3,
+    "theoretical_rank_upper_bound": 6,
+    "numerical_rank": 6,
+    "rank_tolerance": 8.207015875029359e-07,
+    "rank_tolerance_rule": "1e-09 x largest eigenvalue"
+   },
    "meas": {
     "rank": 6,
     "n_well_determined": 6,
@@ -334,6 +388,15 @@
    "config": "C1p",
    "representable": true,
    "joint_dof": 9,
+   "metadata": {
+    "state_dimension": 12,
+    "measurement_dimension": 9,
+    "gauge_dimension": 3,
+    "theoretical_rank_upper_bound": 3,
+    "numerical_rank": 3,
+    "rank_tolerance": 1.0942687833372476e-06,
+    "rank_tolerance_rule": "1e-09 x largest eigenvalue"
+   },
    "meas": {
     "rank": 3,
     "n_well_determined": 3,
@@ -394,6 +457,15 @@
    "config": "C1pp",
    "representable": true,
    "joint_dof": 9,
+   "metadata": {
+    "state_dimension": 12,
+    "measurement_dimension": 9,
+    "gauge_dimension": 3,
+    "theoretical_rank_upper_bound": 6,
+    "numerical_rank": 6,
+    "rank_tolerance": 1.2945338699721092e-06,
+    "rank_tolerance_rule": "1e-09 x largest eigenvalue"
+   },
    "meas": {
     "rank": 6,
     "n_well_determined": 6,
@@ -454,6 +526,15 @@
    "config": "C2a",
    "representable": true,
    "joint_dof": 9,
+   "metadata": {
+    "state_dimension": 12,
+    "measurement_dimension": 7,
+    "gauge_dimension": 3,
+    "theoretical_rank_upper_bound": 4,
+    "numerical_rank": 4,
+    "rank_tolerance": 1.4010252453568268e-06,
+    "rank_tolerance_rule": "1e-09 x largest eigenvalue"
+   },
    "meas": {
     "rank": 4,
     "n_well_determined": 4,
@@ -514,6 +595,15 @@
    "config": "C2b",
    "representable": true,
    "joint_dof": 9,
+   "metadata": {
+    "state_dimension": 12,
+    "measurement_dimension": 7,
+    "gauge_dimension": 3,
+    "theoretical_rank_upper_bound": 4,
+    "numerical_rank": 4,
+    "rank_tolerance": 1.4010252453568268e-06,
+    "rank_tolerance_rule": "1e-09 x largest eigenvalue"
+   },
    "meas": {
     "rank": 4,
     "n_well_determined": 4,
@@ -574,6 +664,15 @@
    "config": "C0",
    "representable": true,
    "joint_dof": 21,
+   "metadata": {
+    "state_dimension": 24,
+    "measurement_dimension": 6,
+    "gauge_dimension": 3,
+    "theoretical_rank_upper_bound": 3,
+    "numerical_rank": 3,
+    "rank_tolerance": 2.4621047625088074e-06,
+    "rank_tolerance_rule": "1e-09 x largest eigenvalue"
+   },
    "meas": {
     "rank": 3,
     "n_well_determined": 3,
@@ -662,6 +761,15 @@
    "config": "C1",
    "representable": true,
    "joint_dof": 21,
+   "metadata": {
+    "state_dimension": 24,
+    "measurement_dimension": 9,
+    "gauge_dimension": 3,
+    "theoretical_rank_upper_bound": 6,
+    "numerical_rank": 6,
+    "rank_tolerance": 2.5890677399442184e-06,
+    "rank_tolerance_rule": "1e-09 x largest eigenvalue"
+   },
    "meas": {
     "rank": 6,
     "n_well_determined": 6,
@@ -750,6 +858,15 @@
    "config": "C1p",
    "representable": true,
    "joint_dof": 21,
+   "metadata": {
+    "state_dimension": 24,
+    "measurement_dimension": 9,
+    "gauge_dimension": 3,
+    "theoretical_rank_upper_bound": 6,
+    "numerical_rank": 6,
+    "rank_tolerance": 2.8950455575734144e-06,
+    "rank_tolerance_rule": "1e-09 x largest eigenvalue"
+   },
    "meas": {
     "rank": 6,
     "n_well_determined": 6,
@@ -838,6 +955,15 @@
    "config": "C1pp",
    "representable": true,
    "joint_dof": 21,
+   "metadata": {
+    "state_dimension": 24,
+    "measurement_dimension": 9,
+    "gauge_dimension": 3,
+    "theoretical_rank_upper_bound": 6,
+    "numerical_rank": 6,
+    "rank_tolerance": 3.4381280546458093e-06,
+    "rank_tolerance_rule": "1e-09 x largest eigenvalue"
+   },
    "meas": {
     "rank": 6,
     "n_well_determined": 6,
@@ -926,6 +1052,15 @@
    "config": "C2a",
    "representable": true,
    "joint_dof": 21,
+   "metadata": {
+    "state_dimension": 24,
+    "measurement_dimension": 7,
+    "gauge_dimension": 3,
+    "theoretical_rank_upper_bound": 4,
+    "numerical_rank": 4,
+    "rank_tolerance": 5.2297413980221886e-06,
+    "rank_tolerance_rule": "1e-09 x largest eigenvalue"
+   },
    "meas": {
     "rank": 4,
     "n_well_determined": 4,
@@ -1014,6 +1149,15 @@
    "config": "C2b",
    "representable": true,
    "joint_dof": 21,
+   "metadata": {
+    "state_dimension": 24,
+    "measurement_dimension": 10,
+    "gauge_dimension": 3,
+    "theoretical_rank_upper_bound": 7,
+    "numerical_rank": 7,
+    "rank_tolerance": 3.0629000224133917e-06,
+    "rank_tolerance_rule": "1e-09 x largest eigenvalue"
+   },
    "meas": {
     "rank": 7,
     "n_well_determined": 7,

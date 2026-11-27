@@ -12,8 +12,8 @@ from spine.spine_information import (QOIS, analyze_static, static_information,  
                                      trajectory_information)
 from spine.spine_kinematics import FE, MODELS, deadlift_pose, segment_rotations  # noqa: E402
 from spine.spine_observation import (CONFIGS, NotRepresentable, config_sensors,  # noqa: E402
-                                     orientation_jacobians, position_jacobian,
-                                     sensor_position, state_dim)
+                                     jacobian_relative_errors, orientation_jacobians,
+                                     position_jacobian, sensor_position, state_dim)
 
 RNG = np.random.default_rng(7)
 
@@ -54,6 +54,16 @@ def test_orientation_jacobian_matches_finite_difference(name):
         for seg in range(len(model.segments)):
             num = numeric_orientation_jacobian(model, phi_p, theta, seg)
             assert np.max(np.abs(gs[seg][:, :-3] - num[:, :-3])) < 1e-6
+
+
+@pytest.mark.parametrize('name', sorted(MODELS))
+def test_jacobian_relative_error_across_step_sizes(name):
+    model = MODELS[name]()
+    phi_p, theta = random_state(model)
+    assert phi_p.dtype == np.float64 and theta.dtype == np.float64
+    errs = jacobian_relative_errors(model, phi_p, theta, steps=(1e-5, 1e-6, 1e-7))
+    for h, e in errs.items():
+        assert e < 1e-6, (h, e)
 
 
 def test_right_jacobian_matches_sympy_derivation():
@@ -118,6 +128,12 @@ def test_orientation_only_rank(key):
     n_bend = sum(s.kind == 'bend' for s in config_sensors(model, config))
     assert res['meas']['rank'] <= 3 * (n_imu - 1) + n_bend
     assert res['meas']['rank'] == EXPECTED_RANK[key]
+    meta = res['metadata']
+    assert meta['numerical_rank'] == res['meas']['rank']
+    assert meta['numerical_rank'] <= meta['theoretical_rank_upper_bound']
+    assert meta['numerical_rank'] == meta['theoretical_rank_upper_bound']   # bound attained
+    assert meta['gauge_dimension'] == 3
+    assert meta['state_dimension'] == 3 + 3 * model.n_joints
     assert res['post']['rank'] == res['post']['dim']        # prior makes it full rank
 
 

@@ -16,7 +16,8 @@ import matplotlib.pyplot as plt  # noqa: E402
 from .spine_information import (REL_TOL, WELL_DETERMINED_DEG, analyze_static,  # noqa: E402
                                 n_well_determined, project_smooth, trajectory_information)
 from .spine_kinematics import MODELS  # noqa: E402
-from .spine_observation import CONFIG_LABELS, CONFIGS, NotRepresentable  # noqa: E402
+from .spine_observation import (CONFIG_LABELS, CONFIGS, NotRepresentable,  # noqa: E402
+                                jacobian_relative_errors)
 
 LABEL = 'Model-based prediction (synthetic deadlift posture; not measured data)'
 SURFACE, INK, INK2, GRID, AXIS = '#fcfcfb', '#0b0b0b', '#52514e', '#e1e0d9', '#c3c2b7'
@@ -54,7 +55,7 @@ def static_table():
                              'reason': str(exc)})
                 continue
             row = {'model': mname, 'config': config, 'representable': True,
-                   'joint_dof': res['meas']['dim']}
+                   'joint_dof': res['meas']['dim'], 'metadata': res['metadata']}
             for key in ('meas', 'post'):
                 s = res[key]
                 row[key] = {'rank': s['rank'], 'n_well_determined': s['n_well_determined'],
@@ -86,6 +87,20 @@ def trajectory_spectra():
                     'n_well_determined': n_well_determined(eig),
                     'eigenvalues': [float(f'{e:.4g}') for e in eig]}
     return out
+
+
+def jacobian_check(seed=11, steps=(1e-5, 1e-6, 1e-7)):
+    rng = np.random.default_rng(seed)
+    out = {}
+    for mname, build in MODELS.items():
+        model = build()
+        phi_p = rng.normal(0, 0.3, 3)
+        theta = rng.normal(0, 0.3, (model.n_joints, 3))
+        out[mname] = {f'{h:g}': e for h, e in jacobian_relative_errors(model, phi_p, theta,
+                                                                       steps).items()}
+    return {'dtype': 'float64', 'retraction': 'pelvis R Exp(d); joints rotation-vector chart',
+            'metric': 'max over segments ||J_num - J_ana||_F / ||J_ana||_F (central difference)',
+            'threshold': 1e-6, 'relative_errors': out}
 
 
 def fig_rank(rows, path):
@@ -242,6 +257,18 @@ def write_markdown(rows, traj, path):
                      f"{r['meas']['logdet_plus']:.2f} | {r['post']['rank']} | "
                      f"{post('lumbar_flexion_L1_S1')} | {post('lumbar_flexion_L1_L5')} | "
                      f"{post('lumbosacral_flexion_L5_S1')} | {', '.join(ident) or 'none'} |")
+    lines += ['', '## Rank metadata (per model and configuration)', '',
+              'Bound: min(3n, 3 x (distinct IMU segments - 1) + bend channels); gauge = pelvis '
+              'world orientation (marginalised).', '',
+              '| model | config | state dim | measurement dim | gauge dim | rank upper bound | '
+              'numerical rank | rank tolerance |', '|---|---|---:|---:|---:|---:|---:|---:|']
+    for r in rows:
+        if r['representable']:
+            m = r['metadata']
+            lines.append(f"| {r['model']} | {r['config']} | {m['state_dimension']} | "
+                         f"{m['measurement_dimension']} | {m['gauge_dimension']} | "
+                         f"{m['theoretical_rank_upper_bound']} | {m['numerical_rank']} | "
+                         f"{m['rank_tolerance']:.3g} |")
     lines += ['', '## Slow joint-trajectory information over one repetition (M3)', '',
               f"Joint trajectories restricted to the first {SETTINGS['smooth_modes']} cosine modes "
               '(slow posture changes); kappa = sigma_a tau^2 / L.', '',
@@ -266,10 +293,18 @@ def main(argv=None):
         {'label': LABEL, 'settings': SETTINGS, 'rows': rows}, indent=1), encoding='utf-8')
     (out / 'trajectory_information.json').write_text(json.dumps(
         {'label': LABEL, 'settings': SETTINGS, 'cases': traj}, indent=1), encoding='utf-8')
+    jc = jacobian_check()
+    (out / 'jacobian_check.json').write_text(json.dumps(jc, indent=1), encoding='utf-8')
     fig_rank(rows, out / 'fig_rank_by_config.png')
     fig_qoi(rows, out / 'fig_lumbar_flexion_std.png')
     fig_spectra(rows, traj, out / 'fig_spectra.png')
     write_markdown(rows, traj, out / 'summary.md')
+    with open(out / 'summary.md', 'a', encoding='utf-8') as f:
+        f.write('\n## Jacobian check (float64, central difference)\n\n'
+                '| model | ' + ' | '.join(f'h={h}' for h in jc['relative_errors']['M1']) + ' |\n'
+                '|---|' + '---:|' * len(jc['relative_errors']['M1']) + '\n')
+        for m, e in jc['relative_errors'].items():
+            f.write(f'| {m} | ' + ' | '.join(f'{v:.2e}' for v in e.values()) + ' |\n')
     print((out / 'summary.md').read_text(encoding='utf-8'))
 
 
