@@ -27,6 +27,12 @@ def _sequences(frame):
 
 def fit_sticky_hmm(train_df, dt_seconds=1.0, n_classes=13, smoothing=1.0):
     """Fit durations, transitions and prior from the provided training windows."""
+    if "stride_frames" in train_df:
+        strides = train_df["stride_frames"].to_numpy(dtype=float)
+        if (not len(strides) or not np.isfinite(strides).all() or strides[0] <= 0
+                or not strides[0].is_integer() or not (strides == strides[0]).all()):
+            raise ValueError("Training windows must share one positive integer stride_frames")
+        dt_seconds = float(strides[0] / 60.0)
     if not np.isfinite(dt_seconds) or dt_seconds <= 0 or not np.isfinite(smoothing) or (
         smoothing <= 0 or n_classes < 2
     ):

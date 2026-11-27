@@ -10,6 +10,7 @@ from uuid import uuid4
 import numpy as np
 import pandas as pd
 
+from scripts.diagnostics.common import ACTIVITY
 from scripts.preprocessing.independent_data_access import SENSORS, SubjectData
 from src.v4_features.feature_families import (
     BY_SENSOR, extract_features, feature_dependencies, feature_names, validate_dependencies,
@@ -84,6 +85,8 @@ def load_folds(path, fast_smoke=False):
 def window_table(data_root, subject, window_sec):
     path = data_root / "subjects" / f"P{subject:02d}" / f"windows_{window_sec}s.parquet"
     windows = pd.read_parquet(path)
+    if "stride_frames" not in windows:
+        windows["stride_frames"] = window_sec * 30
     if not set(WINDOW_COLUMNS).issubset(windows.columns):
         raise ValueError(f"Missing window columns in {path}")
     if not len(windows) or not (windows["subject"] == subject).all():
@@ -246,8 +249,18 @@ def score_predictions(meta, predictions):
         "pooled_macro_f1_13": float(class_f1.mean()), "macro_f1_named12": float(class_f1[1:].mean()),
         "walk3_macro_f1": float(class_f1[4:7].mean()), "accuracy_13": float(cm.trace() / cm.sum()),
         "n_windows": len(y), "n_subjects": len(individuals),
+        "others_f1": float(class_f1[0]), "rowing_f1": float(class_f1[12]),
+        "worst_class_f1": float(class_f1.min()), "worst_class_id": int(class_f1.argmin()),
+        "worst_class_name": ACTIVITY[int(class_f1.argmin())],
     }
     return scores, individuals, cm
+
+
+def class_metrics(cm):
+    recall = np.divide(cm.diagonal(), cm.sum(axis=1), out=np.zeros(N_CLASSES), where=cm.sum(axis=1) > 0)
+    precision = np.divide(cm.diagonal(), cm.sum(axis=0), out=np.zeros(N_CLASSES), where=cm.sum(axis=0) > 0)
+    return pd.DataFrame({"class_id": LABELS, "class_name": [ACTIVITY[i] for i in LABELS],
+                         "support": cm.sum(axis=1), "precision": precision, "recall": recall, "f1": _f1(cm)})
 
 
 def fit_classifier(train, train_meta, validation, validation_meta, n_estimators, fast_smoke=False):
@@ -295,24 +308,28 @@ def predict_probabilities(model, matrix):
 
 def begin_run(output, config, overwrite):
     output.mkdir(parents=True, exist_ok=True)
-    if not overwrite and completed(output):
-        print(f"Already complete: {output}", flush=True)
-        return None
     config_path = output / "config.json"
     if not overwrite and config_path.exists():
         previous = read_json(config_path)
         if previous.get("parameters") != config:
             raise ValueError("Run parameters changed; use a new output directory or --overwrite")
+        if completed(output):
+            print(f"Already complete: {output}", flush=True)
+            return None
         run_id = previous["run_id"]
     else:
         run_id = uuid4().hex
-        write_json(config_path, {"parameters": config, "run_id": run_id})
     write_json(output / "summary.json", {"complete": False})
     if (output / "complete.json").exists():
         write_json(output / "complete.json", {"complete": False})
+    if overwrite or not config_path.exists():
+        write_json(config_path, {"parameters": config, "run_id": run_id})
     return run_id
 
 
 def cached_fold(directory, run_id):
     path = directory / "complete.json"
-    return path.is_file() and read_json(path).get("run_id") == run_id
+    if not path.is_file():
+        return False
+    marker = read_json(path)
+    return marker.get("complete") is True and marker.get("run_id") == run_id

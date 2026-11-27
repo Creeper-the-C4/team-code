@@ -1,7 +1,9 @@
 import importlib
 import json
+from hashlib import sha256
 from pathlib import Path
 import sys
+from zipfile import ZipFile
 
 import numpy as np
 import pandas as pd
@@ -11,6 +13,7 @@ REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO))
 
 from scripts.preprocessing.independent_data_access import SENSORS
+from scripts import package_cloud_v4_bundle as pack
 from scripts.preprocessing.independent_features import sensor_features
 from scripts.task1_v4 import extract_v4_features, train_task1_v4
 from scripts.task2_v4 import run_sensor_selection
@@ -120,6 +123,8 @@ def test_fold_validation_rejects_shared_participants(tmp_path):
 
 
 def test_synthetic_end_to_end_two_folds(tmp_path, monkeypatch):
+    pytest.importorskip("pyarrow")
+    pytest.importorskip("lightgbm")
     monkeypatch.syspath_prepend(str(REPO / "scripts" / "diagnostics"))
     fixture = importlib.import_module("scripts.diagnostics.make_synthetic_fixture")
     dataset = fixture.build(tmp_path / "independent_v1", subjects=(1, 2, 3))
@@ -160,3 +165,147 @@ def test_synthetic_end_to_end_two_folds(tmp_path, monkeypatch):
         assert all(len(layout[str(size)]) == size for size in (1, 2, 3))
         assert set(layout["1"]) < set(layout["2"]) < set(layout["3"])
     assert pd.read_csv(task2_out / "pareto_curve.csv")["k"].tolist() == [1, 2, 3]
+    rank_out = tmp_path / "ranking_prefix"
+    run_sensor_selection.main(common + ["--out", str(rank_out), "--strategy", "ranking_prefix",
+                                        "--sensors", "LowerBack", "RightThigh", "RightShank", "--n-estimators", "3"])
+    table = pd.read_csv(rank_out / "ranking_prefix_pareto_curve.csv")
+    assert table["k"].tolist() == [1, 2, 3] and set(table["strategy"]) == {"ranking_prefix"}
+    assert all(all(json.loads(item).values()) for item in table["anti_leakage_audit"])
+
+
+def test_hmm_stride_metadata_and_fallback():
+    frame = pd.DataFrame({"subject": [1, 1], "trial": [1, 1], "source_start": [0, 45],
+                          "majority_label": [0, 1]})
+    assert fit_sticky_hmm(frame, dt_seconds=2)["dt_seconds"] == 2
+    assert fit_sticky_hmm(frame.assign(stride_frames=45), dt_seconds=2)["dt_seconds"] == .75
+    for bad in ([60, 120], [0, 0], [np.nan, 60], [1.5, 1.5]):
+        with pytest.raises(ValueError, match="stride_frames"):
+            fit_sticky_hmm(frame.assign(stride_frames=bad))
+
+
+def test_task_reports_and_held_out_prediction_order(tmp_path, monkeypatch):
+    # Exercise report generation without filesystem codecs or an estimator dependency.
+    ids = (1, 2, 3)
+    splits = tmp_path / "splits.json"
+    splits.write_text(json.dumps({"folds": [
+        {"fold": i, "train": [ids[i - 2]], "validation": [ids[i - 1]], "test": [s]} for i, s in enumerate(ids)
+    ]}), encoding="utf-8")
+    events = []
+    sensors = SENSORS[:3]
+    width = len(feature_names("F1H", SENSORS))
+    def load(root, cache, people, family, seconds, cap):
+        events.append(("load", people[0]))
+        labels = np.array([0, 4, 5, 6, 12])
+        meta = pd.DataFrame({"subject": people[0], "trial": 1, "source_start": np.arange(5) * 45,
+                             "source_stop_exclusive": np.arange(5) * 45 + 120,
+                             "majority_label": labels, "stride_frames": 45})
+        return np.tile(np.arange(width), (5, 1)), meta
+
+    class Model:
+        best_iteration_ = 3
+
+        def __init__(self, columns):
+            self.booster_ = self
+            self.columns = columns
+
+        def feature_importance(self, importance_type, iteration):
+            assert importance_type == "gain" and iteration == 3
+            return np.arange(self.columns)
+
+    def fit(matrix, *args):
+        events.append(("fit", matrix.shape[1]))
+        return Model(matrix.shape[1])
+
+    def predict(model, matrix):
+        assert matrix.shape[1] == model.columns
+        events.append(("predict", matrix.shape[1]))
+        return np.eye(13)[[4, 0, 5, 6, 12]]
+
+    for script in (train_task1_v4, run_sensor_selection):
+        monkeypatch.setattr(script, "load_split", load)
+        monkeypatch.setattr(script, "fit_classifier", fit)
+        monkeypatch.setattr(script, "predict_probabilities", predict)
+    monkeypatch.setattr(pd.DataFrame, "to_parquet", lambda self, path, index: self.to_pickle(path))
+    monkeypatch.setattr(pd, "read_parquet", pd.read_pickle)
+    common = ["--data-root", str(tmp_path), "--feature-cache", str(tmp_path), "--splits", str(splits), "--fast-smoke"]
+    task1 = tmp_path / "task1"
+    train_task1_v4.main(common + ["--out", str(task1), "--family", "F1H", "--window-sec", "2", "--enable-sticky-hmm"])
+    read = lambda p: json.loads(p.read_text(encoding="utf-8"))
+    assert read(task1 / "summary.json")["dt_seconds"] == .75
+    assert read(task1 / "fold_0/hmm_parameters.json")["dt_seconds"] == .75
+    folds = pd.read_csv(task1 / "fold_summary.csv")
+    assert (folds["best_iteration"] == 3).all() and (folds["training_seconds"] >= 0).all()
+    np.testing.assert_allclose(folds[["validation_macro_f1", "test_pooled_macro_f1_13", "test_subject_equal_macro_f1_13"]], 3/13)
+    walk = pd.read_csv(task1 / "walk3_confusion_3x3.csv", index_col=0)
+    np.testing.assert_array_equal(walk, np.diag([0, 2, 2]))
+    assert pd.read_csv(task1 / "walk3_confusion_3x3_hmm.csv", index_col=0).shape == (3, 3)
+    errors = pd.read_csv(task1 / "others_error_breakdown.csv").query("mode == 'raw' and class_id == 4").iloc[0]
+    assert errors.others_to_class == errors.class_to_others == 2
+    assert len(pd.read_csv(task1 / "per_class_metrics.csv")) == 26
+    assert len(pd.read_csv(task1 / "per_subject_metrics.csv")) == 4
+    delta = read(task1 / "hmm_delta_summary.json")
+    assert set(delta) == {"pooled_macro_f1_13", "subject_equal_macro_f1_13", "walk3_macro_f1", "others_f1", "rowing_f1"}
+    assert all(np.isclose(x["delta"], x["hmm"] - x["raw"]) for x in delta.values())
+
+    for strategy, fits in (("ranking_prefix", 3), ("forward_greedy", 6), ("backward_greedy", 6)):
+        events.clear()
+        dest = tmp_path / strategy
+        argv = common + ["--out", str(dest), "--strategy", strategy, "--sensors", *sensors]
+        run_sensor_selection.main(argv)
+        assert sum(ev == "fit" for ev, _ in events) == 2 * fits
+        test_at = events.index(("load", 1), 2)
+        assert [ev for ev, _ in events[test_at + 1:test_at + 4]] == ["predict"] * 3
+        summary = read(dest / "summary.json")
+        assert summary["config"]["strategy"] == strategy
+        assert strategy in (dest / "README.md").read_text(encoding="utf-8")
+        assert len(summary["anti_leakage_audit"]) == 2
+        for audit in summary["anti_leakage_audit"].values():
+            assert audit["outer_test_predictions_per_k"] == {"1": 1, "2": 1, "3": 1}
+            assert audit["roles_disjoint"] and audit["layouts_locked_before_test"] and audit["feature_dependencies_checked"]
+        per_fold = pd.read_csv(dest / "per_fold_pareto.csv")
+        assert (per_fold["step_timing_seconds"] >= 0).all()
+        assert per_fold.query("k == 1")["pareto_nondominated"].all()
+        assert not per_fold.query("k > 1")["pareto_nondominated"].any()
+        assert set(per_fold["worst_class_name"]) == {"Others"}
+        freq = pd.read_csv(dest / "sensor_rank_stability.csv")
+        assert freq.query("k == 1").folds_selected.sum() == 2
+        if strategy == "ranking_prefix":
+            assert read(dest / "per_fold_selected_subsets.json")["folds"]["0"]["1"] == [sensors[2]]
+            assert (dest / "ranking_prefix_pareto_curve.csv").is_file()
+            assert freq.query("k == 1 and rank_mean == 1").iloc[0]["sensor"] == sensors[2]
+            with pytest.raises(ValueError, match="parameters changed"):
+                run_sensor_selection.main(argv + ["--strategy", "backward_greedy"])
+
+
+def test_cloud_package_partial_stages_and_rowing(tmp_path):
+    for window in (2, 4):
+        out = tmp_path / "task1_v4" / f"{window}s"
+        out.mkdir(parents=True)
+        config = {"window_seconds": window, "family": "F1H"}
+        (out / "config.json").write_text(json.dumps({"parameters": config}), encoding="utf-8")
+        (out / "summary.json").write_text(json.dumps({"complete": True, "config": config,
+            "raw": {"rowing_f1": window/5}, "hmm": {"rowing_f1": window/6}}), encoding="utf-8")
+    extra = tmp_path / "logs"
+    extra.mkdir()
+    for ext in ("npy", "npz", "parquet", "pt", "pth", "ckpt", "zip", "exe", "txt"):
+        (extra / f"file.{ext}").write_bytes(b"sample")
+    (tmp_path / "stage_status.json").write_text("{}", encoding="utf-8")
+    archive = tmp_path / "out.zip"
+    pack.main(["--results-root", str(tmp_path), "--out-zip", str(archive)])
+    with ZipFile(archive) as z:
+        assert z.testzip() is None
+        names = [n.removeprefix(pack.PREFIX) for n in z.namelist() if not n.endswith("/")]
+        assert [n for n in names if n.startswith("logs/")] == ["logs/file.txt"]
+        assert "stage_status.json" in names and "final_report/summary_report.md" in names
+        registry = json.loads(z.read(pack.PREFIX + "experiment_registry.json"))
+        assert "run_manifest.json" in registry["missing_root_files"]
+        assert len(registry["experiments"]) == 2
+        config_file = tmp_path / "task1_v4/2s/config.json"
+        assert registry["experiments"][0]["config_sha256"] == sha256(config_file.read_bytes()).hexdigest()
+        with z.open(pack.PREFIX + "final_report/rowing_2s_vs_4s.csv") as source:
+            frame = pd.read_csv(source)
+        assert frame.query("mode == 'raw'")["rowing_f1"].tolist() == [.4, .8]
+    (tmp_path / "task1_v4/4s/summary.json").unlink()
+    pack.package(tmp_path, archive)
+    with ZipFile(archive) as z:
+        assert pack.PREFIX + "final_report/rowing_2s_vs_4s.csv" not in z.namelist()
