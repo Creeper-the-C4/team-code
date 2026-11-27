@@ -27,10 +27,13 @@ from .spine_observation import (config_sensors, frame_position_jacobians, frame_
                                 state_dim)
 
 REL_TOL = 1e-9
-WELL_DETERMINED_DEG = 5.0   # a direction counts as determined if sensor-only std < this
+PRECISION_DEG = 5.0
 
 
-def n_well_determined(eig, std_deg=WELL_DETERMINED_DEG):
+def n_precise_directions(eig, std_deg=PRECISION_DEG):
+    """Measurement-only 5-deg-precision eigen-directions: eigenvalues of I_meas with
+    1/sqrt(lambda) < std_deg. Distinct from the numerical rank (structural directions)
+    and from posterior standard deviations (which include the prior)."""
     return int(np.sum(np.asarray(eig) > 1.0 / np.deg2rad(std_deg) ** 2))
 
 QOIS = {
@@ -63,7 +66,7 @@ def spectrum(m, rel_tol=REL_TOL):
         'logdet_plus': float(np.sum(np.log(pos))) if pos.size else float('-inf'),
         'lambda_min_plus': float(pos[-1]) if pos.size else 0.0,
         'cond_plus': float(pos[0] / pos[-1]) if pos.size else float('inf'),
-        'n_well_determined': n_well_determined(eig),
+        'meas_5deg_precision_eigendirections': n_precise_directions(eig),
     }
 
 
@@ -78,8 +81,12 @@ def qoi_std(info, c, rel_tol=REL_TOL):
     return float(np.sqrt(np.sum((v[:, pos].T @ c) ** 2 / w[pos])))
 
 
-def static_information(model, config, phase=0.5, sigma_ori_deg=2.0, sigma_bend_deg=2.0):
-    """Single-frame joint information at a deadlift posture (orientation/bend only)."""
+def static_information(model, config, phase=0.5, sigma_ori_deg=2.0, sigma_bend_deg=2.0,
+                       prior_scale=1.0):
+    """Single-frame joint information at a deadlift posture (orientation/bend only).
+
+    prior_scale multiplies the ROM-derived nominal prior standard deviations.
+    """
     sensors = config_sensors(model, config)
     phi_p, theta = deadlift_pose(model, phase)
     rows = frame_rows(model, sensors, phi_p, theta, np.deg2rad(sigma_ori_deg),
@@ -88,7 +95,7 @@ def static_information(model, config, phase=0.5, sigma_ori_deg=2.0, sigma_bend_d
     rows = rows[:, :d - 3]                    # pelvis translation is not seen by orientations
     info = rows.T @ rows
     keep = list(range(3, d - 3))
-    prior = np.linalg.inv(model.prior_cov())
+    prior = np.linalg.inv(model.prior_cov() * prior_scale ** 2)
     i_meas = schur(info, keep, [0, 1, 2])
     full_post = info.copy()
     full_post[3:, 3:] += prior
@@ -99,9 +106,12 @@ def static_information(model, config, phase=0.5, sigma_ori_deg=2.0, sigma_bend_d
 def rank_metadata(model, config, i_meas):
     """Model-specific dimensions and the analytic rank bound of I_meas on joints.
 
-    IMUs on the same rigid segment span the same three directions and the
-    pelvis world orientation (gauge, 3) is always fixed by the L5 IMU, so
-    rank <= min(3n, 3 * (distinct IMU segments - 1) + bend channels).
+    IMUs on the same rigid segment span the same three directions. L5 is the
+    relative-orientation reference node; the pelvis (root) world orientation is
+    a nuisance/reference variable (gauge, 3) eliminated by the Schur complement.
+    The L5 IMU alone cannot separate the pelvis orientation from the internal
+    L5/S1 joint angle, which is why that joint stays unobserved without a sacrum
+    IMU. Hence rank <= min(3n, 3 * (distinct IMU segments - 1) + bend channels).
     """
     sensors = config_sensors(model, config)
     imus = [s for s in sensors if s.kind == 'imu']
@@ -122,7 +132,7 @@ def rank_metadata(model, config, i_meas):
 
 def analyze_static(model, config, **kw):
     i_meas, h_post, prior = static_information(model, config, **kw)
-    cov_prior = model.prior_cov()
+    cov_prior = model.prior_cov() * kw.get('prior_scale', 1.0) ** 2
     out = {'model': model.name, 'config': config, 'metadata': rank_metadata(model, config, i_meas),
            'meas': spectrum(i_meas), 'post': spectrum(h_post), 'qoi': {}}
     for name, levels in QOIS.items():
@@ -185,8 +195,18 @@ def trajectory_information(model, config, n_frames=61, sigma_ori_deg=2.0,
     return schur(big, joint_idx, nuisance_idx)
 
 
+BASIS_DEFINITION = {
+    'basis_definition': 'DCT-II: b_k(t_n) = cos(pi k t_n), t_n = (n + 0.5) / N, '
+                        'n = 0..N-1, k = 0..K-1 (k = 0 is the constant mode)',
+    'basis_normalization': 'each column scaled to unit Euclidean norm over the N frames '
+                           '(orthonormal columns)',
+    'boundary_condition': 'even (Neumann, zero-slope) extension at both ends, implicit in DCT-II',
+    'time_interval': 'dimensionless repetition time [0, 1]',
+}
+
+
 def smooth_basis(n_frames, n_modes):
-    """Orthonormal cosine basis (n_frames x n_modes) for slow joint-angle changes."""
+    """Orthonormal DCT-II cosine basis (n_frames x n_modes) for slow joint-angle changes."""
     t = (np.arange(n_frames) + 0.5) / n_frames
     b = np.stack([np.cos(np.pi * k * t) for k in range(n_modes)], axis=1)
     return b / np.linalg.norm(b, axis=0)

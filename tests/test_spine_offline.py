@@ -8,7 +8,8 @@ import sympy as sp
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'src'))
 
 from spine import so3  # noqa: E402
-from spine.spine_information import (QOIS, analyze_static, static_information,  # noqa: E402
+from spine.spine_information import (QOIS, analyze_static, n_precise_directions,  # noqa: E402
+                                     project_smooth, smooth_basis, static_information,
                                      trajectory_information)
 from spine.spine_kinematics import FE, MODELS, deadlift_pose, segment_rotations  # noqa: E402
 from spine.spine_observation import (CONFIGS, NotRepresentable, config_sensors,  # noqa: E402
@@ -183,3 +184,36 @@ def test_deadlift_pose_flexes_forward():
     assert phi_p[0] > 0 and np.all(theta[:, FE] > 0)
     up = segment_rotations(model, phi_p, theta)[-1] @ np.array([0.0, 1.0, 0.0])
     assert up[2] > 0          # trunk axis tilts toward +Z (anterior)
+
+
+def test_dct_basis_is_orthonormal():
+    b = smooth_basis(41, 10)
+    assert np.allclose(b.T @ b, np.eye(10), atol=1e-12)
+
+
+def test_slow_mode_precision_count_equals_3k_for_c0():
+    model = MODELS['M3']()
+    n = 21
+    info = trajectory_information(model, 'C0', n_frames=n)
+    for k in (4, 6):
+        eig = np.linalg.eigvalsh(project_smooth(info, n, 3 * model.n_joints, k))
+        assert n_precise_directions(eig) == 3 * k
+
+
+@pytest.mark.parametrize('sb', [0.5, 2.0, 5.0])
+def test_bend_noise_sweep_measurement_std(sb):
+    q = analyze_static(MODELS['M3'](), 'C2a', sigma_bend_deg=sb)['qoi']['lumbar_flexion_L1_L5']
+    assert abs(q['meas_only_std_deg'] - sb) < 1e-6           # one channel measures L1-L5 FE
+    q4 = analyze_static(MODELS['M3'](), 'C2b', sigma_bend_deg=sb)['qoi']['lumbar_flexion_L1_L5']
+    assert abs(q4['meas_only_std_deg'] - 2 * sb) < 1e-6       # four channels add up: 2 sigma
+    assert q['posterior_std_deg'] < q['meas_only_std_deg']
+
+
+def test_prior_scale_moves_unidentified_more_than_identified():
+    model = MODELS['M2']()
+    lo = analyze_static(model, 'C1', prior_scale=0.5)['qoi']
+    hi = analyze_static(model, 'C1', prior_scale=1.5)['qoi']
+    measured = hi['lumbar_flexion_L1_L5']['posterior_std_deg'] / lo['lumbar_flexion_L1_L5']['posterior_std_deg']
+    prior_only = hi['lumbosacral_flexion_L5_S1']['posterior_std_deg'] / lo['lumbosacral_flexion_L5_S1']['posterior_std_deg']
+    assert abs(prior_only - 3.0) < 1e-6        # unidentified: posterior = prior, scales 3x
+    assert measured < 1.5                      # identified by L1 IMU: barely moves

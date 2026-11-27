@@ -13,8 +13,9 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt  # noqa: E402
 
-from .spine_information import (REL_TOL, WELL_DETERMINED_DEG, analyze_static,  # noqa: E402
-                                n_well_determined, project_smooth, trajectory_information)
+from .spine_information import (BASIS_DEFINITION, PRECISION_DEG, QOIS, REL_TOL,  # noqa: E402
+                                analyze_static, n_precise_directions, project_smooth,
+                                trajectory_information)
 from .spine_kinematics import MODELS  # noqa: E402
 from .spine_observation import (CONFIG_LABELS, CONFIGS, NotRepresentable,  # noqa: E402
                                 jacobian_relative_errors)
@@ -23,7 +24,10 @@ LABEL = 'Model-based prediction (synthetic deadlift posture; not measured data)'
 SURFACE, INK, INK2, GRID, AXIS = '#fcfcfb', '#0b0b0b', '#52514e', '#e1e0d9', '#c3c2b7'
 SERIES = ['#2a78d6', '#eb6834', '#1baf7a']
 SETTINGS = {'phase': 0.5, 'sigma_ori_deg': 2.0, 'sigma_bend_deg': 2.0,
-            'trajectory_frames': 41, 'kappas': [0.1, 0.5, 2.0], 'smooth_modes': 6}
+            'trajectory_frames': 41, 'kappas': [0.1, 0.5, 2.0], 'smooth_modes': 6,
+            'smooth_modes_sweep': [4, 6, 8, 10], 'sigma_bend_sweep_deg': [0.5, 1.0, 2.0, 3.0, 5.0],
+            'prior_scale_sweep': [0.5, 1.0, 1.5]}
+PRECISION_LABEL = f'measurement-only {PRECISION_DEG:g}-deg-precision eigen-directions'
 
 
 def style(ax):
@@ -58,7 +62,9 @@ def static_table():
                    'joint_dof': res['meas']['dim'], 'metadata': res['metadata']}
             for key in ('meas', 'post'):
                 s = res[key]
-                row[key] = {'rank': s['rank'], 'n_well_determined': s['n_well_determined'],
+                row[key] = {'rank': s['rank'],
+                            'meas_5deg_precision_eigendirections':
+                                s['meas_5deg_precision_eigendirections'],
                             'logdet_plus': round(s['logdet_plus'], 3),
                             'lambda_min_plus': float(f"{s['lambda_min_plus']:.4g}"),
                             'cond_plus': float(f"{s['cond_plus']:.4g}"),
@@ -70,23 +76,64 @@ def static_table():
 
 
 def trajectory_spectra():
-    out = {}
+    """M3 joint-trajectory information over one repetition, projected on slow DCT-II modes."""
+    out, sweep = {}, {}
     n = SETTINGS['trajectory_frames']
     model = MODELS['M3']()
     cases = [('C0', None), ('C1', None)] + [('C0', k) for k in SETTINGS['kappas']]
     for config, kappa in cases:
         info = trajectory_information(model, config, n_frames=n,
                                       sigma_ori_deg=SETTINGS['sigma_ori_deg'], kappa=kappa)
-        smooth = project_smooth(info, n, 3 * model.n_joints, SETTINGS['smooth_modes'])
-        eig = np.clip(np.linalg.eigvalsh(smooth)[::-1], 0, None)
-        tol = REL_TOL * eig[0]
         key = f'{config}_orientation_only' if kappa is None else f'{config}_plus_acc_kappa_{kappa}'
-        out[key] = {'model': 'M3', 'config': config, 'kappa': kappa, 'frames': n,
-                    'smooth_modes': SETTINGS['smooth_modes'],
-                    'smooth_dims': int(smooth.shape[0]), 'rank': int((eig > tol).sum()),
-                    'n_well_determined': n_well_determined(eig),
-                    'eigenvalues': [float(f'{e:.4g}') for e in eig]}
-    return out
+        for n_modes in sorted(set(SETTINGS['smooth_modes_sweep']) | {SETTINGS['smooth_modes']}):
+            smooth = project_smooth(info, n, 3 * model.n_joints, n_modes)
+            eig = np.clip(np.linalg.eigvalsh(smooth)[::-1], 0, None)
+            tol = REL_TOL * eig[0]
+            entry = {'model': 'M3', 'config': config, 'kappa': kappa, 'frames': n,
+                     'smooth_modes': n_modes, 'smooth_dims': int(smooth.shape[0]),
+                     'numerical_rank': int((eig > tol).sum()), 'rank_tolerance': float(tol),
+                     'rank_tolerance_rule': f'{REL_TOL:g} x largest eigenvalue',
+                     'meas_5deg_precision_eigendirections': n_precise_directions(eig),
+                     'time_invariant_jacobian_rank': (3 if config == 'C0' else 6) * n_modes
+                     if kappa is None else None}
+            sweep.setdefault(key, {})[n_modes] = entry
+            if n_modes == SETTINGS['smooth_modes']:
+                out[key] = {**entry, 'eigenvalues': [float(f'{e:.4g}') for e in eig]}
+    return out, sweep
+
+
+def static_sensitivity():
+    """sigma_bend sweep for C2a/C2b and ROM prior-scale sweep (M2, M3)."""
+    bend, prior = [], []
+    for mname in ('M2', 'M3'):
+        model = MODELS[mname]()
+        for config in ('C2a', 'C2b'):
+            for sb in SETTINGS['sigma_bend_sweep_deg']:
+                r = analyze_static(model, config, phase=SETTINGS['phase'],
+                                   sigma_ori_deg=SETTINGS['sigma_ori_deg'], sigma_bend_deg=sb)
+                q = r['qoi']['lumbar_flexion_L1_L5']
+                bend.append({'model': mname, 'config': config, 'sigma_bend_deg': sb,
+                             'L1_L5_meas_only_std_deg': finite(q['meas_only_std_deg']),
+                             'L1_L5_posterior_std_deg': finite(q['posterior_std_deg']),
+                             'meas_5deg_precision_eigendirections':
+                                 r['meas']['meas_5deg_precision_eigendirections']})
+        for config in ('C0', 'C1', 'C1pp', 'C2a'):
+            for ps in SETTINGS['prior_scale_sweep']:
+                r = analyze_static(model, config, phase=SETTINGS['phase'],
+                                   sigma_ori_deg=SETTINGS['sigma_ori_deg'],
+                                   sigma_bend_deg=SETTINGS['sigma_bend_deg'], prior_scale=ps)
+                row = {'model': mname, 'config': config, 'prior_scale': ps}
+                for qn in ('lumbar_flexion_L1_S1', 'lumbar_flexion_L1_L5',
+                           'lumbosacral_flexion_L5_S1'):
+                    v = r['qoi'][qn]
+                    row[f'{qn}_prior_std_deg'] = finite(v['prior_std_deg'])
+                    row[f'{qn}_posterior_std_deg'] = finite(v['posterior_std_deg'])
+                prior.append(row)
+    return {'sigma_bend_sweep': bend, 'prior_scale_sweep': prior,
+            'notes': {'sigma_bend': 'nominal design values, not a literature-wide standard '
+                                    'deviation',
+                      'prior': 'ROM-derived nominal prior scale (sigma_FE = ROM/4, '
+                               'sigma_one-side = ROM/2) multiplied by prior_scale'}}
 
 
 def jacobian_check(seed=11, steps=(1e-5, 1e-6, 1e-7)):
@@ -212,10 +259,11 @@ def fig_spectra(rows, traj, path):
         e = np.array(traj[key]['eigenvalues'])
         e = e[e > 0]
         a2.semilogy(np.arange(1, e.size + 1), e, '-', color=SERIES[k], linewidth=2,
-                    label=f"{lab}: {traj[key]['n_well_determined']} determined")
-    thr = 1.0 / np.deg2rad(WELL_DETERMINED_DEG) ** 2
+                    label=f"{lab}: {traj[key]['meas_5deg_precision_eigendirections']} "
+                          f"5-deg-precision dirs")
+    thr = 1.0 / np.deg2rad(PRECISION_DEG) ** 2
     a2.axhline(thr, color=INK2, linestyle=':', linewidth=1)
-    a2.text(1, thr * 1.3, f'std = {WELL_DETERMINED_DEG:g} deg', fontsize=7, color=INK2)
+    a2.text(1, thr * 1.3, f'1/sqrt(lambda) = {PRECISION_DEG:g} deg', fontsize=7, color=INK2)
     a2.set_title(f"M3 one repetition, slow modes (K={SETTINGS['smooth_modes']}): "
                  'joint-trajectory spectrum', color=INK, fontsize=9, loc='left')
     a2.set_xlabel('eigenvalue index', color=INK2, fontsize=8)
@@ -229,13 +277,15 @@ def fig_spectra(rows, traj, path):
     plt.close(fig)
 
 
-def write_markdown(rows, traj, path):
+def write_markdown(rows, traj, path, sweep=None, sens=None):
     lines = ['# spine_offline_v1 summary', '', f'> {LABEL}', '',
              f"Settings: posture phase {SETTINGS['phase']}, orientation noise "
              f"{SETTINGS['sigma_ori_deg']} deg/axis, bend noise {SETTINGS['sigma_bend_deg']} deg.",
              '', '## Sensor-only rank and posterior std of lumbar flexion', '',
-             f'"determined" = eigen-direction with sensor-only std < {WELL_DETERMINED_DEG:g} deg.', '',
-             '| model | config | joint DoF | rank I_meas | determined dirs | logdet+ I_meas | rank H_post | '
+             'Three distinct statistics: numerical rank of I_meas (structural directions); '
+             f'{PRECISION_LABEL} (eigenvalues of I_meas with 1/sqrt(lambda) < {PRECISION_DEG:g} deg); '
+             'posterior std (I_meas plus the ROM-derived nominal prior).', '',
+             '| model | config | joint DoF | rank I_meas | 5-deg-precision dirs | logdet+ I_meas | rank H_post | '
              'L1-S1 post std (deg) | L1-L5 post std | L5/S1 post std | identifiable from sensors alone |',
              '|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---|']
     for r in rows:
@@ -253,7 +303,7 @@ def write_markdown(rows, traj, path):
                                        ('lumbosacral_flexion_L5_S1', 'L5/S1'))
                  if q.get(name) and q[name]['meas_only_std_deg'] is not None]
         lines.append(f"| {r['model']} | {r['config']} | {r['joint_dof']} | {r['meas']['rank']} | "
-                     f"{r['meas']['n_well_determined']} | "
+                     f"{r['meas']['meas_5deg_precision_eigendirections']} | "
                      f"{r['meas']['logdet_plus']:.2f} | {r['post']['rank']} | "
                      f"{post('lumbar_flexion_L1_S1')} | {post('lumbar_flexion_L1_L5')} | "
                      f"{post('lumbosacral_flexion_L5_S1')} | {', '.join(ident) or 'none'} |")
@@ -272,12 +322,49 @@ def write_markdown(rows, traj, path):
     lines += ['', '## Slow joint-trajectory information over one repetition (M3)', '',
               f"Joint trajectories restricted to the first {SETTINGS['smooth_modes']} cosine modes "
               '(slow posture changes); kappa = sigma_a tau^2 / L.', '',
-              '| case | dims | numerical rank | determined dirs (std < 5 deg) | largest eig | smallest positive eig |',
-              '|---|---:|---:|---:|---:|---:|']
+              f"Basis: {BASIS_DEFINITION['basis_definition']}; {BASIS_DEFINITION['basis_normalization']}; "
+              f"{BASIS_DEFINITION['boundary_condition']}; time {BASIS_DEFINITION['time_interval']}.", '',
+              '| case | dims | numerical rank | rank tolerance | 5-deg-precision dirs | largest eig | smallest positive eig |',
+              '|---|---:|---:|---:|---:|---:|---:|']
     for key, v in traj.items():
         e = [x for x in v['eigenvalues'] if x > 0]
-        lines.append(f"| {key} | {v['smooth_dims']} | {v['rank']} | {v['n_well_determined']} | {e[0]:.3g} | "
-                     f"{e[v['rank'] - 1]:.3g} |")
+        lines.append(f"| {key} | {v['smooth_dims']} | {v['numerical_rank']} | {v['rank_tolerance']:.3g} | "
+                     f"{v['meas_5deg_precision_eigendirections']} | {e[0]:.3g} | "
+                     f"{e[v['numerical_rank'] - 1]:.3g} |")
+    if sweep:
+        ks = sorted(next(iter(sweep.values())))
+        lines += ['', '## Slow-mode count sensitivity (M3 trajectory)', '',
+                  'Each cell: numerical rank / 5-deg-precision directions. With a posture-'
+                  'independent Jacobian the orientation-only rank would be 3K (C0) or 6K (C1); '
+                  'the numerical rank is higher because the Jacobian varies with posture over the '
+                  'repetition, and those extra directions are very weak (sensor-only std > 30 deg), '
+                  'so the 5-deg-precision count equals 3K / 6K exactly.', '',
+                  '| case | ' + ' | '.join(f'K={k}' for k in ks) + ' |',
+                  '|---|' + '---:|' * len(ks)]
+        for key, by_k in sweep.items():
+            lines.append(f'| {key} | ' + ' | '.join(
+                f"{by_k[k]['numerical_rank']} / {by_k[k]['meas_5deg_precision_eigendirections']}"
+                for k in ks) + ' |')
+    if sens:
+        sbs = SETTINGS['sigma_bend_sweep_deg']
+        lines += ['', '## Bend-sensor noise sensitivity (L1-L5 flexion, posterior std deg; '
+                  'measurement-only std in parentheses)', '',
+                  'Channel noise values are nominal design values, not a literature-wide std.', '',
+                  '| model | config | ' + ' | '.join(f'sigma_bend={v:g}' for v in sbs) + ' |',
+                  '|---|---|' + '---:|' * len(sbs)]
+        for m in ('M2', 'M3'):
+            for c in ('C2a', 'C2b'):
+                cells = [r for r in sens['sigma_bend_sweep'] if r['model'] == m and r['config'] == c]
+                lines.append(f'| {m} | {c} | ' + ' | '.join(
+                    f"{r['L1_L5_posterior_std_deg']:.2f} ({r['L1_L5_meas_only_std_deg']:.2f})"
+                    for r in cells) + ' |')
+        lines += ['', '## ROM-derived nominal prior scale sensitivity (posterior std, deg)', '',
+                  '| model | config | prior scale | L1-S1 | L1-L5 | L5/S1 |', '|---|---|---:|---:|---:|---:|']
+        for r in sens['prior_scale_sweep']:
+            lines.append(f"| {r['model']} | {r['config']} | {r['prior_scale']} | "
+                         f"{r['lumbar_flexion_L1_S1_posterior_std_deg']:.2f} | "
+                         f"{r['lumbar_flexion_L1_L5_posterior_std_deg']:.2f} | "
+                         f"{r['lumbosacral_flexion_L5_S1_posterior_std_deg']:.2f} |")
     path.write_text('\n'.join(lines) + '\n', encoding='utf-8')
 
 
@@ -288,17 +375,22 @@ def main(argv=None):
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     rows = static_table()
-    traj = trajectory_spectra()
+    traj, sweep = trajectory_spectra()
+    sens = static_sensitivity()
     (out / 'static_information.json').write_text(json.dumps(
         {'label': LABEL, 'settings': SETTINGS, 'rows': rows}, indent=1), encoding='utf-8')
     (out / 'trajectory_information.json').write_text(json.dumps(
-        {'label': LABEL, 'settings': SETTINGS, 'cases': traj}, indent=1), encoding='utf-8')
+        {'label': LABEL, 'settings': SETTINGS, **BASIS_DEFINITION, 'cases': traj,
+         'smooth_modes_sweep': {k: {str(n): v for n, v in d.items()} for k, d in sweep.items()}},
+        indent=1), encoding='utf-8')
+    (out / 'sensitivity.json').write_text(json.dumps({'label': LABEL, **sens}, indent=1),
+                                          encoding='utf-8')
     jc = jacobian_check()
     (out / 'jacobian_check.json').write_text(json.dumps(jc, indent=1), encoding='utf-8')
     fig_rank(rows, out / 'fig_rank_by_config.png')
     fig_qoi(rows, out / 'fig_lumbar_flexion_std.png')
     fig_spectra(rows, traj, out / 'fig_spectra.png')
-    write_markdown(rows, traj, out / 'summary.md')
+    write_markdown(rows, traj, out / 'summary.md', sweep, sens)
     with open(out / 'summary.md', 'a', encoding='utf-8') as f:
         f.write('\n## Jacobian check (float64, central difference)\n\n'
                 '| model | ' + ' | '.join(f'h={h}' for h in jc['relative_errors']['M1']) + ' |\n'

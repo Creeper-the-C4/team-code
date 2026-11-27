@@ -9,9 +9,13 @@ Measurement models
   R_meas = R_pred,i(x_bar); its Jacobian is the segment orientation Jacobian
   G_i (analytic, from the SO(3) right Jacobian). Pelvis orientation uses the
   right retraction R Exp(d); joints use an additive rotation-vector chart.
-- Single-channel flexible bend sensor over a span: y = sum of the flexion (FE)
-  components of the joints inside the span (integrated sagittal curvature;
-  exact for planar bending, first order otherwise).
+- Single-channel flexible bend sensor (C2a): an in-plane observation of the
+  integrated curvature, i.e. the net tangent turning angle in the specified
+  (sagittal) plane over the sensor span. In this joint-chain model it is
+  linearised as the sum of the FE components of the joints inside the span;
+  it is not a general 3-D sum of joint flexions. C2b repeats this per joint.
+  Channel noise is a nominal design value (default 2 deg) with a sensitivity
+  sweep; it is not a literature-wide standard deviation.
 - IMU free acceleration: second time difference of the mount-point world
   position, kept dimensionless (lengths in spine-span units, time in
   repetition units) until the dataset acceleration unit is resolved.

@@ -12,9 +12,10 @@ joint.
 Prior ranges of motion are the representative intervertebral values tabulated
 by White & Panjabi, *Clinical Biomechanics of the Spine*, 2nd ed. (1990)
 [values to be checked against the original table before citing in the paper].
-FE is the total flexion+extension range; LB and AR are one-side ranges. A
-range is mapped to a Gaussian prior by treating FE_total as 4 sigma and the
-one-side LB/AR values as 2 sigma. Lumped joints add the variances of the
+FE is the total flexion+extension range; LB and AR are one-side ranges. The
+ROM-derived nominal prior scale treats FE_total as 4 sigma and the one-side
+LB/AR values as 2 sigma (sigma_FE = ROM/4, sigma_one-side = ROM/2); a 0.5x /
+1.0x / 1.5x scale sweep is reported. Lumped joints add the variances of the
 levels they represent (independent levels).
 """
 from dataclasses import dataclass, field

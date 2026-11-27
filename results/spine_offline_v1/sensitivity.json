@@ -1,0 +1,435 @@
+{
+ "label": "Model-based prediction (synthetic deadlift posture; not measured data)",
+ "sigma_bend_sweep": [
+  {
+   "model": "M2",
+   "config": "C2a",
+   "sigma_bend_deg": 0.5,
+   "L1_L5_meas_only_std_deg": 0.5,
+   "L1_L5_posterior_std_deg": 0.497,
+   "meas_5deg_precision_eigendirections": 4
+  },
+  {
+   "model": "M2",
+   "config": "C2a",
+   "sigma_bend_deg": 1.0,
+   "L1_L5_meas_only_std_deg": 1.0,
+   "L1_L5_posterior_std_deg": 0.978,
+   "meas_5deg_precision_eigendirections": 4
+  },
+  {
+   "model": "M2",
+   "config": "C2a",
+   "sigma_bend_deg": 2.0,
+   "L1_L5_meas_only_std_deg": 2.0,
+   "L1_L5_posterior_std_deg": 1.842,
+   "meas_5deg_precision_eigendirections": 4
+  },
+  {
+   "model": "M2",
+   "config": "C2a",
+   "sigma_bend_deg": 3.0,
+   "L1_L5_meas_only_std_deg": 3.0,
+   "L1_L5_posterior_std_deg": 2.532,
+   "meas_5deg_precision_eigendirections": 4
+  },
+  {
+   "model": "M2",
+   "config": "C2a",
+   "sigma_bend_deg": 5.0,
+   "L1_L5_meas_only_std_deg": 5.0,
+   "L1_L5_posterior_std_deg": 3.432,
+   "meas_5deg_precision_eigendirections": 3
+  },
+  {
+   "model": "M2",
+   "config": "C2b",
+   "sigma_bend_deg": 0.5,
+   "L1_L5_meas_only_std_deg": 0.5,
+   "L1_L5_posterior_std_deg": 0.497,
+   "meas_5deg_precision_eigendirections": 4
+  },
+  {
+   "model": "M2",
+   "config": "C2b",
+   "sigma_bend_deg": 1.0,
+   "L1_L5_meas_only_std_deg": 1.0,
+   "L1_L5_posterior_std_deg": 0.978,
+   "meas_5deg_precision_eigendirections": 4
+  },
+  {
+   "model": "M2",
+   "config": "C2b",
+   "sigma_bend_deg": 2.0,
+   "L1_L5_meas_only_std_deg": 2.0,
+   "L1_L5_posterior_std_deg": 1.842,
+   "meas_5deg_precision_eigendirections": 4
+  },
+  {
+   "model": "M2",
+   "config": "C2b",
+   "sigma_bend_deg": 3.0,
+   "L1_L5_meas_only_std_deg": 3.0,
+   "L1_L5_posterior_std_deg": 2.532,
+   "meas_5deg_precision_eigendirections": 4
+  },
+  {
+   "model": "M2",
+   "config": "C2b",
+   "sigma_bend_deg": 5.0,
+   "L1_L5_meas_only_std_deg": 5.0,
+   "L1_L5_posterior_std_deg": 3.432,
+   "meas_5deg_precision_eigendirections": 3
+  },
+  {
+   "model": "M3",
+   "config": "C2a",
+   "sigma_bend_deg": 0.5,
+   "L1_L5_meas_only_std_deg": 0.5,
+   "L1_L5_posterior_std_deg": 0.497,
+   "meas_5deg_precision_eigendirections": 4
+  },
+  {
+   "model": "M3",
+   "config": "C2a",
+   "sigma_bend_deg": 1.0,
+   "L1_L5_meas_only_std_deg": 1.0,
+   "L1_L5_posterior_std_deg": 0.978,
+   "meas_5deg_precision_eigendirections": 4
+  },
+  {
+   "model": "M3",
+   "config": "C2a",
+   "sigma_bend_deg": 2.0,
+   "L1_L5_meas_only_std_deg": 2.0,
+   "L1_L5_posterior_std_deg": 1.842,
+   "meas_5deg_precision_eigendirections": 4
+  },
+  {
+   "model": "M3",
+   "config": "C2a",
+   "sigma_bend_deg": 3.0,
+   "L1_L5_meas_only_std_deg": 3.0,
+   "L1_L5_posterior_std_deg": 2.532,
+   "meas_5deg_precision_eigendirections": 4
+  },
+  {
+   "model": "M3",
+   "config": "C2a",
+   "sigma_bend_deg": 5.0,
+   "L1_L5_meas_only_std_deg": 5.0,
+   "L1_L5_posterior_std_deg": 3.432,
+   "meas_5deg_precision_eigendirections": 4
+  },
+  {
+   "model": "M3",
+   "config": "C2b",
+   "sigma_bend_deg": 0.5,
+   "L1_L5_meas_only_std_deg": 1.0,
+   "L1_L5_posterior_std_deg": 0.978,
+   "meas_5deg_precision_eigendirections": 7
+  },
+  {
+   "model": "M3",
+   "config": "C2b",
+   "sigma_bend_deg": 1.0,
+   "L1_L5_meas_only_std_deg": 2.0,
+   "L1_L5_posterior_std_deg": 1.839,
+   "meas_5deg_precision_eigendirections": 7
+  },
+  {
+   "model": "M3",
+   "config": "C2b",
+   "sigma_bend_deg": 2.0,
+   "L1_L5_meas_only_std_deg": 4.0,
+   "L1_L5_posterior_std_deg": 3.042,
+   "meas_5deg_precision_eigendirections": 7
+  },
+  {
+   "model": "M3",
+   "config": "C2b",
+   "sigma_bend_deg": 3.0,
+   "L1_L5_meas_only_std_deg": 6.0,
+   "L1_L5_posterior_std_deg": 3.697,
+   "meas_5deg_precision_eigendirections": 6
+  },
+  {
+   "model": "M3",
+   "config": "C2b",
+   "sigma_bend_deg": 5.0,
+   "L1_L5_meas_only_std_deg": 10.0,
+   "L1_L5_posterior_std_deg": 4.258,
+   "meas_5deg_precision_eigendirections": 4
+  }
+ ],
+ "prior_scale_sweep": [
+  {
+   "model": "M2",
+   "config": "C0",
+   "prior_scale": 0.5,
+   "lumbar_flexion_L1_S1_prior_std_deg": 4.165,
+   "lumbar_flexion_L1_S1_posterior_std_deg": 3.407,
+   "lumbar_flexion_L1_L5_prior_std_deg": 3.582,
+   "lumbar_flexion_L1_L5_posterior_std_deg": 2.662,
+   "lumbosacral_flexion_L5_S1_prior_std_deg": 2.125,
+   "lumbosacral_flexion_L5_S1_posterior_std_deg": 2.125
+  },
+  {
+   "model": "M2",
+   "config": "C0",
+   "prior_scale": 1.0,
+   "lumbar_flexion_L1_S1_prior_std_deg": 8.329,
+   "lumbar_flexion_L1_S1_posterior_std_deg": 6.351,
+   "lumbar_flexion_L1_L5_prior_std_deg": 7.163,
+   "lumbar_flexion_L1_L5_posterior_std_deg": 4.72,
+   "lumbosacral_flexion_L5_S1_prior_std_deg": 4.25,
+   "lumbosacral_flexion_L5_S1_posterior_std_deg": 4.25
+  },
+  {
+   "model": "M2",
+   "config": "C0",
+   "prior_scale": 1.5,
+   "lumbar_flexion_L1_S1_prior_std_deg": 12.494,
+   "lumbar_flexion_L1_S1_posterior_std_deg": 9.349,
+   "lumbar_flexion_L1_L5_prior_std_deg": 10.745,
+   "lumbar_flexion_L1_L5_posterior_std_deg": 6.838,
+   "lumbosacral_flexion_L5_S1_prior_std_deg": 6.375,
+   "lumbosacral_flexion_L5_S1_posterior_std_deg": 6.375
+  },
+  {
+   "model": "M2",
+   "config": "C1",
+   "prior_scale": 0.5,
+   "lumbar_flexion_L1_S1_prior_std_deg": 4.165,
+   "lumbar_flexion_L1_S1_posterior_std_deg": 3.007,
+   "lumbar_flexion_L1_L5_prior_std_deg": 3.582,
+   "lumbar_flexion_L1_L5_posterior_std_deg": 2.127,
+   "lumbosacral_flexion_L5_S1_prior_std_deg": 2.125,
+   "lumbosacral_flexion_L5_S1_posterior_std_deg": 2.125
+  },
+  {
+   "model": "M2",
+   "config": "C1",
+   "prior_scale": 1.0,
+   "lumbar_flexion_L1_S1_prior_std_deg": 8.329,
+   "lumbar_flexion_L1_S1_posterior_std_deg": 4.968,
+   "lumbar_flexion_L1_L5_prior_std_deg": 7.163,
+   "lumbar_flexion_L1_L5_posterior_std_deg": 2.572,
+   "lumbosacral_flexion_L5_S1_prior_std_deg": 4.25,
+   "lumbosacral_flexion_L5_S1_posterior_std_deg": 4.25
+  },
+  {
+   "model": "M2",
+   "config": "C1",
+   "prior_scale": 1.5,
+   "lumbar_flexion_L1_S1_prior_std_deg": 12.494,
+   "lumbar_flexion_L1_S1_posterior_std_deg": 6.924,
+   "lumbar_flexion_L1_L5_prior_std_deg": 10.745,
+   "lumbar_flexion_L1_L5_posterior_std_deg": 2.702,
+   "lumbosacral_flexion_L5_S1_prior_std_deg": 6.375,
+   "lumbosacral_flexion_L5_S1_posterior_std_deg": 6.375
+  },
+  {
+   "model": "M2",
+   "config": "C1pp",
+   "prior_scale": 0.5,
+   "lumbar_flexion_L1_S1_prior_std_deg": 4.165,
+   "lumbar_flexion_L1_S1_posterior_std_deg": 2.877,
+   "lumbar_flexion_L1_L5_prior_std_deg": 3.582,
+   "lumbar_flexion_L1_L5_posterior_std_deg": 2.612,
+   "lumbosacral_flexion_L5_S1_prior_std_deg": 2.125,
+   "lumbosacral_flexion_L5_S1_posterior_std_deg": 1.676
+  },
+  {
+   "model": "M2",
+   "config": "C1pp",
+   "prior_scale": 1.0,
+   "lumbar_flexion_L1_S1_prior_std_deg": 8.329,
+   "lumbar_flexion_L1_S1_posterior_std_deg": 4.938,
+   "lumbar_flexion_L1_L5_prior_std_deg": 7.163,
+   "lumbar_flexion_L1_L5_posterior_std_deg": 4.699,
+   "lumbosacral_flexion_L5_S1_prior_std_deg": 4.25,
+   "lumbosacral_flexion_L5_S1_posterior_std_deg": 2.336
+  },
+  {
+   "model": "M2",
+   "config": "C1pp",
+   "prior_scale": 1.5,
+   "lumbar_flexion_L1_S1_prior_std_deg": 12.494,
+   "lumbar_flexion_L1_S1_posterior_std_deg": 7.021,
+   "lumbar_flexion_L1_L5_prior_std_deg": 10.745,
+   "lumbar_flexion_L1_L5_posterior_std_deg": 6.83,
+   "lumbosacral_flexion_L5_S1_prior_std_deg": 6.375,
+   "lumbosacral_flexion_L5_S1_posterior_std_deg": 2.574
+  },
+  {
+   "model": "M2",
+   "config": "C2a",
+   "prior_scale": 0.5,
+   "lumbar_flexion_L1_S1_prior_std_deg": 4.165,
+   "lumbar_flexion_L1_S1_posterior_std_deg": 2.659,
+   "lumbar_flexion_L1_L5_prior_std_deg": 3.582,
+   "lumbar_flexion_L1_L5_posterior_std_deg": 1.599,
+   "lumbosacral_flexion_L5_S1_prior_std_deg": 2.125,
+   "lumbosacral_flexion_L5_S1_posterior_std_deg": 2.125
+  },
+  {
+   "model": "M2",
+   "config": "C2a",
+   "prior_scale": 1.0,
+   "lumbar_flexion_L1_S1_prior_std_deg": 8.329,
+   "lumbar_flexion_L1_S1_posterior_std_deg": 4.632,
+   "lumbar_flexion_L1_L5_prior_std_deg": 7.163,
+   "lumbar_flexion_L1_L5_posterior_std_deg": 1.842,
+   "lumbosacral_flexion_L5_S1_prior_std_deg": 4.25,
+   "lumbosacral_flexion_L5_S1_posterior_std_deg": 4.25
+  },
+  {
+   "model": "M2",
+   "config": "C2a",
+   "prior_scale": 1.5,
+   "lumbar_flexion_L1_S1_prior_std_deg": 12.494,
+   "lumbar_flexion_L1_S1_posterior_std_deg": 6.658,
+   "lumbar_flexion_L1_L5_prior_std_deg": 10.745,
+   "lumbar_flexion_L1_L5_posterior_std_deg": 1.92,
+   "lumbosacral_flexion_L5_S1_prior_std_deg": 6.375,
+   "lumbosacral_flexion_L5_S1_posterior_std_deg": 6.375
+  },
+  {
+   "model": "M3",
+   "config": "C0",
+   "prior_scale": 0.5,
+   "lumbar_flexion_L1_S1_prior_std_deg": 4.165,
+   "lumbar_flexion_L1_S1_posterior_std_deg": 3.407,
+   "lumbar_flexion_L1_L5_prior_std_deg": 3.582,
+   "lumbar_flexion_L1_L5_posterior_std_deg": 2.662,
+   "lumbosacral_flexion_L5_S1_prior_std_deg": 2.125,
+   "lumbosacral_flexion_L5_S1_posterior_std_deg": 2.125
+  },
+  {
+   "model": "M3",
+   "config": "C0",
+   "prior_scale": 1.0,
+   "lumbar_flexion_L1_S1_prior_std_deg": 8.329,
+   "lumbar_flexion_L1_S1_posterior_std_deg": 6.351,
+   "lumbar_flexion_L1_L5_prior_std_deg": 7.163,
+   "lumbar_flexion_L1_L5_posterior_std_deg": 4.72,
+   "lumbosacral_flexion_L5_S1_prior_std_deg": 4.25,
+   "lumbosacral_flexion_L5_S1_posterior_std_deg": 4.25
+  },
+  {
+   "model": "M3",
+   "config": "C0",
+   "prior_scale": 1.5,
+   "lumbar_flexion_L1_S1_prior_std_deg": 12.494,
+   "lumbar_flexion_L1_S1_posterior_std_deg": 9.349,
+   "lumbar_flexion_L1_L5_prior_std_deg": 10.745,
+   "lumbar_flexion_L1_L5_posterior_std_deg": 6.838,
+   "lumbosacral_flexion_L5_S1_prior_std_deg": 6.375,
+   "lumbosacral_flexion_L5_S1_posterior_std_deg": 6.375
+  },
+  {
+   "model": "M3",
+   "config": "C1",
+   "prior_scale": 0.5,
+   "lumbar_flexion_L1_S1_prior_std_deg": 4.165,
+   "lumbar_flexion_L1_S1_posterior_std_deg": 3.007,
+   "lumbar_flexion_L1_L5_prior_std_deg": 3.582,
+   "lumbar_flexion_L1_L5_posterior_std_deg": 2.127,
+   "lumbosacral_flexion_L5_S1_prior_std_deg": 2.125,
+   "lumbosacral_flexion_L5_S1_posterior_std_deg": 2.125
+  },
+  {
+   "model": "M3",
+   "config": "C1",
+   "prior_scale": 1.0,
+   "lumbar_flexion_L1_S1_prior_std_deg": 8.329,
+   "lumbar_flexion_L1_S1_posterior_std_deg": 4.968,
+   "lumbar_flexion_L1_L5_prior_std_deg": 7.163,
+   "lumbar_flexion_L1_L5_posterior_std_deg": 2.572,
+   "lumbosacral_flexion_L5_S1_prior_std_deg": 4.25,
+   "lumbosacral_flexion_L5_S1_posterior_std_deg": 4.25
+  },
+  {
+   "model": "M3",
+   "config": "C1",
+   "prior_scale": 1.5,
+   "lumbar_flexion_L1_S1_prior_std_deg": 12.494,
+   "lumbar_flexion_L1_S1_posterior_std_deg": 6.924,
+   "lumbar_flexion_L1_L5_prior_std_deg": 10.745,
+   "lumbar_flexion_L1_L5_posterior_std_deg": 2.702,
+   "lumbosacral_flexion_L5_S1_prior_std_deg": 6.375,
+   "lumbosacral_flexion_L5_S1_posterior_std_deg": 6.375
+  },
+  {
+   "model": "M3",
+   "config": "C1pp",
+   "prior_scale": 0.5,
+   "lumbar_flexion_L1_S1_prior_std_deg": 4.165,
+   "lumbar_flexion_L1_S1_posterior_std_deg": 2.877,
+   "lumbar_flexion_L1_L5_prior_std_deg": 3.582,
+   "lumbar_flexion_L1_L5_posterior_std_deg": 2.612,
+   "lumbosacral_flexion_L5_S1_prior_std_deg": 2.125,
+   "lumbosacral_flexion_L5_S1_posterior_std_deg": 1.676
+  },
+  {
+   "model": "M3",
+   "config": "C1pp",
+   "prior_scale": 1.0,
+   "lumbar_flexion_L1_S1_prior_std_deg": 8.329,
+   "lumbar_flexion_L1_S1_posterior_std_deg": 4.938,
+   "lumbar_flexion_L1_L5_prior_std_deg": 7.163,
+   "lumbar_flexion_L1_L5_posterior_std_deg": 4.699,
+   "lumbosacral_flexion_L5_S1_prior_std_deg": 4.25,
+   "lumbosacral_flexion_L5_S1_posterior_std_deg": 2.336
+  },
+  {
+   "model": "M3",
+   "config": "C1pp",
+   "prior_scale": 1.5,
+   "lumbar_flexion_L1_S1_prior_std_deg": 12.494,
+   "lumbar_flexion_L1_S1_posterior_std_deg": 7.021,
+   "lumbar_flexion_L1_L5_prior_std_deg": 10.745,
+   "lumbar_flexion_L1_L5_posterior_std_deg": 6.83,
+   "lumbosacral_flexion_L5_S1_prior_std_deg": 6.375,
+   "lumbosacral_flexion_L5_S1_posterior_std_deg": 2.574
+  },
+  {
+   "model": "M3",
+   "config": "C2a",
+   "prior_scale": 0.5,
+   "lumbar_flexion_L1_S1_prior_std_deg": 4.165,
+   "lumbar_flexion_L1_S1_posterior_std_deg": 2.659,
+   "lumbar_flexion_L1_L5_prior_std_deg": 3.582,
+   "lumbar_flexion_L1_L5_posterior_std_deg": 1.599,
+   "lumbosacral_flexion_L5_S1_prior_std_deg": 2.125,
+   "lumbosacral_flexion_L5_S1_posterior_std_deg": 2.125
+  },
+  {
+   "model": "M3",
+   "config": "C2a",
+   "prior_scale": 1.0,
+   "lumbar_flexion_L1_S1_prior_std_deg": 8.329,
+   "lumbar_flexion_L1_S1_posterior_std_deg": 4.632,
+   "lumbar_flexion_L1_L5_prior_std_deg": 7.163,
+   "lumbar_flexion_L1_L5_posterior_std_deg": 1.842,
+   "lumbosacral_flexion_L5_S1_prior_std_deg": 4.25,
+   "lumbosacral_flexion_L5_S1_posterior_std_deg": 4.25
+  },
+  {
+   "model": "M3",
+   "config": "C2a",
+   "prior_scale": 1.5,
+   "lumbar_flexion_L1_S1_prior_std_deg": 12.494,
+   "lumbar_flexion_L1_S1_posterior_std_deg": 6.658,
+   "lumbar_flexion_L1_L5_prior_std_deg": 10.745,
+   "lumbar_flexion_L1_L5_posterior_std_deg": 1.92,
+   "lumbosacral_flexion_L5_S1_prior_std_deg": 6.375,
+   "lumbosacral_flexion_L5_S1_posterior_std_deg": 6.375
+  }
+ ],
+ "notes": {
+  "sigma_bend": "nominal design values, not a literature-wide standard deviation",
+  "prior": "ROM-derived nominal prior scale (sigma_FE = ROM/4, sigma_one-side = ROM/2) multiplied by prior_scale"
+ }
+}
