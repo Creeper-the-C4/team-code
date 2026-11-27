@@ -1,0 +1,14 @@
+group,activity,name,precision,recall,f1,support
+others_true,0,Others,1.0,0.556726855234318,0.7152531009051291,9581
+others_true,1,lying,0.0,0.0,0.0,0
+others_true,2,sitting,0.0,0.0,0.0,0
+others_true,3,standing,0.0,0.0,0.0,0
+others_true,4,slow_walking,0.0,0.0,0.0,0
+others_true,5,moderate_walking,0.0,0.0,0.0,0
+others_true,6,brisk_walking,0.0,0.0,0.0,0
+others_true,7,ascending_stairs,0.0,0.0,0.0,0
+others_true,8,descending_stairs,0.0,0.0,0.0,0
+others_true,9,cycling,0.0,0.0,0.0,0
+others_true,10,running,0.0,0.0,0.0,0
+others_true,11,jumping,0.0,0.0,0.0,0
+others_true,12,rowing,0.0,0.0,0.0,0

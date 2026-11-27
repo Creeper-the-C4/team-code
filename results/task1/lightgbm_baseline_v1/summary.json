@@ -1,0 +1,45 @@
+{
+  "model": "LightGBM",
+  "data_version": "independent_v1",
+  "window_seconds": 2,
+  "features": 680,
+  "subjects": 30,
+  "oof_windows": 220702,
+  "oof": {
+    "n_windows": 220702,
+    "accuracy_13": 0.9334668466982629,
+    "macro_f1_13": 0.9215358504179941,
+    "macro_f1_named12_all_windows": 0.9468539556907154,
+    "walk3_macro_f1_all_windows": 0.888238760803573,
+    "balanced_accuracy_present_classes": 0.9200787445688878
+  },
+  "macro_f1_named12_true_named_only": 0.9566635126362458,
+  "fold_mean": {
+    "accuracy_13": 0.9319244599256568,
+    "macro_f1_13": 0.9205989015485901,
+    "macro_f1_named12_all_windows": 0.9445567036060699,
+    "walk3_macro_f1_all_windows": 0.8858360423997936,
+    "macro_f1_named12_true_named_only": 0.9541601041100224
+  },
+  "fold_sd": {
+    "accuracy_13": 0.0324430464470566,
+    "macro_f1_13": 0.032459632584991086,
+    "macro_f1_named12_all_windows": 0.029019582736055045,
+    "walk3_macro_f1_all_windows": 0.06398756993267143,
+    "macro_f1_named12_true_named_only": 0.026266045240923654
+  },
+  "per_subject_macro_f1_13_mean": 0.8856694866979027,
+  "subject_cluster_bootstrap_macro_f1_13_ci95": [
+    0.9028542686438695,
+    0.9380913799150498
+  ],
+  "bootstrap_scope": "Conditional on the six trained models; does not include model retraining uncertainty.",
+  "window_label_policy": "majority labels; all 13 classes and all purity levels retained",
+  "primary_metric": "13-class macro F1; fixed labels 0..12, all held-out windows",
+  "named12_all_windows_definition": "F1 averaged over labels 1..12, including false positives from true Others",
+  "named12_true_named_definition": "Diagnostic computed only where y_true>0; for contextual teammate comparison",
+  "early_stopping": "validation participants only; macro F1 over all 13 classes",
+  "test_evaluation": "Once per outer fold after selection; every subject predicted exactly once",
+  "total_training_seconds": 1003.2552113365382,
+  "completed_utc": "2026-11-27T15:13:25.524231+00:00"
+}

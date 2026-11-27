@@ -1,0 +1,41 @@
+{
+  "model": {
+    "objective": "multiclass",
+    "num_class": 13,
+    "metric": "None",
+    "n_estimators": 300,
+    "learning_rate": 0.08,
+    "num_leaves": 31,
+    "max_bin": 63,
+    "min_child_samples": 50,
+    "n_jobs": 12,
+    "verbosity": -1,
+    "random_state": 42,
+    "deterministic": true,
+    "force_col_wise": true
+  },
+  "early_stopping_rounds": 40,
+  "data_root": "/root/autodl-tmp/C_Problem/data/processed/independent_v1",
+  "features": 680,
+  "split_file_sha256": "486b224b7952f4831b2ea5a9ef34851ee1421e67ee8df2d18bc98efddc17b021",
+  "script_sha256": "095d08f19e0da412239f226c0f988cea30775cfbc0edc4282b9d61d38fb7b6ee",
+  "feature_schema_sha256": "d2f9b557db36151809e0b0706ab90c9931fab4fa2320d05cd324bdba46966805",
+  "class_names": [
+    "Others",
+    "lying",
+    "sitting",
+    "standing",
+    "slow_walking",
+    "moderate_walking",
+    "brisk_walking",
+    "ascending_stairs",
+    "descending_stairs",
+    "cycling",
+    "running",
+    "jumping",
+    "rowing"
+  ],
+  "normalization": "none; LightGBM native missing handling",
+  "smoothing": "none",
+  "all_window_purity_levels_retained": true
+}

@@ -51,3 +51,7 @@ Thumbs.db
 !results/preprocessing/independent_v1/indices_and_quality.zip
 !results/preprocessing/independent_v1/reproducibility_handoff.zip
 !scripts/preprocessing/trial_information.csv
+
+# Explicit small Task 1 baseline results
+!results/task1/lightgbm_baseline_v1/*.csv
+!results/task1/lightgbm_baseline_v1/report_bundle.zip

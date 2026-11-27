@@ -1,0 +1,21 @@
+{
+  "source_commit": "38540728601a66c6b00d242ab5b0b8a040ebcc12",
+  "reason": "Preserve previous overview and preprocessing progress before publishing Task 1 baseline",
+  "files": {
+    "README.md": {
+      "archive_path": "docs/archive/2026-11-27_before_task1_baseline/README.md",
+      "git_blob_sha": "6cf568f9f07877944071428b1dcb83e7356f93b2",
+      "sha256": "625ebd3e477bcdd7563dcac64ab2f4707225999845fff2bde5b77c194697ba6d"
+    },
+    ".gitignore": {
+      "archive_path": "docs/archive/2026-11-27_before_task1_baseline/gitignore.txt",
+      "git_blob_sha": "fda8898da170529156ddd8d55e18291ca99f2e38",
+      "sha256": "1fa0ae0a1849a8cab2b42722a3e9207985d8f45c1e8cbb88af9cde3fcdc768e8"
+    },
+    "docs/05_independent_preprocessing_progress.md": {
+      "archive_path": "docs/archive/2026-11-27_before_task1_baseline/05_independent_preprocessing_progress.md",
+      "git_blob_sha": "7d76376b96144034ebfde4ab4b0a3885f17c5002",
+      "sha256": "db3068937604efa8556065b026e0ba56ef530d9019010af9dc0df6b831aaae91"
+    }
+  }
+}

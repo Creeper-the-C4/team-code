@@ -4,14 +4,20 @@
 
 ## 最新进度 2026年11月27日
 
-已独立完成30名参与者的数据预处理，当前进入 **Task 1 分类基线准备阶段**。本轮尚未训练模型，下面V3.0内容是研究路线，不能视为已实现的模型或实验结论。
+已完成独立数据预处理，并完成 **Task 1 LightGBM全量六折基线测试**。Task 1的进一步对照与改进、Task 2传感器精简、Task 3全身重建及Task 4新增测量设计继续推进。
 
-- 13,454,722帧、2,381个官方试次；220,702个2秒窗、108,613个4秒窗。
-- 已生成逐人连续缓存、试次与窗口索引、每传感器40项基础特征和全量质量检查。
-- 原始信号无NaN或无穷值，试次覆盖完整；2秒窗口数量与队友报告相同，处理细节仍待代码对照。
-- 加速度保留原值，单位分歧尚未解决；本轮未乘9.81、未去重力、未对世界系信号重复旋转。
+| 本轮测试指标 | 结果 |
+|---|---:|
+| 合并测试13类Macro-F1 | 0.9215 |
+| 合并测试准确率 | 93.35% |
+| 六折13类Macro-F1均值与标准差 | 0.9206 ± 0.0325 |
+| 测试参与者与窗口 | 30人 220,702个2秒窗 |
 
-入口：[进度说明](docs/05_independent_preprocessing_progress.md) · [中文PDF报告](docs/reports/2026-11-27_independent_preprocessing_progress.pdf) · [处理结果与实际索引](results/preprocessing/independent_v1/README.md) · [复现脚本](scripts/preprocessing/README.md)
+每折20人训练、5人验证、5人测试；固定680项特征与LightGBM参数，仅用内层验证参与者早停。每位参与者恰好测试一次，全部窗口无重复覆盖。主要薄弱类别为Others（F1 0.6177）及中速步行（F1 0.8359）。
+
+入口：[Task 1测试说明](docs/06_task1_lightgbm_baseline.md) · [实际指标与图表](results/task1/lightgbm_baseline_v1/README.md) · [测试脚本](scripts/task1/README.md) · [数据预处理快照](docs/05_independent_preprocessing_progress.md)
+
+下方V3.0内容仍为研究路线，不能视为所有方法都已实现。加速度单位分歧保持原有记录，未额外乘9.81或去重力。
 
 ## 核心研究主线（V3.0）
 **人体运动的多尺度可观测性与最小传感器设计**（$\mathrm{Measurement} \to \mathrm{Representation} \to \mathrm{Observability} \to \mathrm{Inference}$）：
@@ -35,10 +41,13 @@ team-code/
 │   ├── 03_literature_map_v3.md
 │   ├── 04_v3_blueprint_and_wps.md
 │   ├── 05_independent_preprocessing_progress.md
+│   ├── 06_task1_lightgbm_baseline.md
 │   ├── reports/                    # 中文进度报告
 │   ├── archive/                    # 本轮更新前的文档归档
 │   └── reference_images/
 ├── scripts/preprocessing/          # 预处理与数据读取脚本
+├── scripts/task1/                  # 分类基线训练和结果汇总
+├── results/task1/lightgbm_baseline_v1/ # 六折指标 图表 配置
 └── results/preprocessing/independent_v1/
     ├── README.md
     ├── indices_and_quality.zip     # 30人真实试次/窗口索引和质量结果
@@ -50,3 +59,5 @@ team-code/
 > **数据约定**：原始数据集（`dataset.zip`, ~8.79 GB）及二进制切片缓存**不提交至本仓库**，请按 `.gitignore` 规则保存在本地数据目录。
 
 小体积的结果表和索引交付包已按路径显式纳入版本管理；原始数据、约9 GB的连续缓存、约600 MB的特征数组仍保留在云端。旧README及旧忽略规则归档于 `docs/archive/2026-11-27_before_independent_preprocessing`。
+
+本轮更新前的首页、预处理说明和忽略规则归档于 `docs/archive/2026-11-27_before_task1_baseline`。预处理原始结果及第一次归档保留。

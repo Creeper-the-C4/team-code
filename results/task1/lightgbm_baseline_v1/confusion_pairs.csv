@@ -1,0 +1,157 @@
+true,predicted,count,true_class_fraction
+moderate walking,slow walking,1753,0.09662661228089515
+moderate walking,brisk walking,1472,0.08113769154448242
+brisk walking,moderate walking,1394,0.07409769840004253
+Others,standing,1197,0.1249347667258115
+slow walking,moderate walking,1076,0.05913062592735066
+Others,lying,920,0.09602337960546915
+rowing,sitting,873,0.05168432893256764
+lying,sitting,624,0.03642306794303059
+Others,sitting,556,0.058031520718087884
+descending stairs,Others,468,0.0356462792291873
+Others,ascending stairs,431,0.04498486588038827
+Others,descending stairs,426,0.044462999686880285
+standing,Others,417,0.0216769766595623
+ascending stairs,Others,380,0.02681911214623474
+slow walking,Others,333,0.018299719734022092
+Others,cycling,287,0.029955119507358314
+lying,Others,244,0.014242353490544011
+jumping,Others,209,0.011956521739130435
+Others,running,176,0.018369690011481057
+sitting,lying,146,0.00675644407422833
+running,descending stairs,136,0.007515057744377521
+Others,jumping,126,0.01315102807640121
+brisk walking,Others,82,0.004358688141178972
+cycling,Others,73,0.004005486968449931
+sitting,Others,71,0.0032856680087000787
+moderate walking,Others,66,0.0036379671480542388
+Others,slow walking,64,0.006679887276902202
+descending stairs,ascending stairs,55,0.00418919948206261
+sitting,standing,49,0.0022675736961451248
+jumping,running,47,0.002688787185354691
+ascending stairs,jumping,45,0.0031759474910014822
+jumping,descending stairs,39,0.002231121281464531
+ascending stairs,descending stairs,35,0.002470181381890042
+Others,rowing,32,0.003339943638451101
+descending stairs,slow walking,32,0.0024373524259273366
+moderate walking,descending stairs,29,0.0015985007165692866
+cycling,sitting,29,0.0015912208504801097
+descending stairs,jumping,27,0.00205651610937619
+brisk walking,standing,26,0.0013820230691543082
+slow walking,descending stairs,24,0.0013188987195691597
+descending stairs,running,24,0.0018280143194455024
+Others,brisk walking,19,0.0019830915353303414
+cycling,standing,18,0.0009876543209876543
+slow walking,ascending stairs,16,0.0008792658130461065
+brisk walking,lying,13,0.0006910115345771541
+jumping,standing,13,0.0007437070938215103
+Others,moderate walking,13,0.0013568521031207597
+rowing,Others,11,0.0006512343851755373
+slow walking,brisk walking,11,0.0006044952464691983
+ascending stairs,slow walking,10,0.0007057661091114405
+descending stairs,moderate walking,8,0.0006093381064818342
+running,jumping,7,0.0003868044427253136
+brisk walking,descending stairs,7,0.000372083134003083
+running,brisk walking,6,0.00033154666519312595
+sitting,rowing,6,0.00027766208524226016
+descending stairs,brisk walking,6,0.0004570035798613756
+moderate walking,standing,4,0.00022048285745783266
+brisk walking,slow walking,4,0.0002126189337160474
+standing,lying,3,0.00015594947237095182
+moderate walking,ascending stairs,3,0.00016536214309337448
+standing,sitting,2,0.00010396631491396787
+standing,jumping,2,0.00010396631491396787
+rowing,lying,2,0.00011840625185009768
+standing,ascending stairs,1,5.1983157456983934e-05
+cycling,ascending stairs,1,5.486968449931413e-05
+brisk walking,running,1,5.315473342901185e-05
+jumping,ascending stairs,1,5.7208237986270026e-05
+running,Others,1,5.525777753218766e-05
+lying,standing,1,5.8370301190754146e-05
+lying,ascending stairs,1,5.8370301190754146e-05
+lying,slow walking,0,0.0
+lying,rowing,0,0.0
+lying,cycling,0,0.0
+lying,moderate walking,0,0.0
+lying,brisk walking,0,0.0
+lying,descending stairs,0,0.0
+sitting,slow walking,0,0.0
+lying,running,0,0.0
+lying,jumping,0,0.0
+slow walking,cycling,0,0.0
+standing,rowing,0,0.0
+slow walking,lying,0,0.0
+slow walking,sitting,0,0.0
+slow walking,standing,0,0.0
+slow walking,rowing,0,0.0
+slow walking,jumping,0,0.0
+slow walking,running,0,0.0
+sitting,running,0,0.0
+sitting,jumping,0,0.0
+sitting,moderate walking,0,0.0
+sitting,ascending stairs,0,0.0
+sitting,brisk walking,0,0.0
+ascending stairs,brisk walking,0,0.0
+ascending stairs,moderate walking,0,0.0
+ascending stairs,sitting,0,0.0
+ascending stairs,standing,0,0.0
+ascending stairs,lying,0,0.0
+brisk walking,cycling,0,0.0
+brisk walking,jumping,0,0.0
+brisk walking,rowing,0,0.0
+brisk walking,ascending stairs,0,0.0
+moderate walking,sitting,0,0.0
+moderate walking,lying,0,0.0
+moderate walking,cycling,0,0.0
+moderate walking,rowing,0,0.0
+moderate walking,jumping,0,0.0
+moderate walking,running,0,0.0
+brisk walking,sitting,0,0.0
+standing,descending stairs,0,0.0
+standing,brisk walking,0,0.0
+standing,moderate walking,0,0.0
+standing,slow walking,0,0.0
+sitting,descending stairs,0,0.0
+sitting,cycling,0,0.0
+standing,running,0,0.0
+standing,cycling,0,0.0
+descending stairs,rowing,0,0.0
+descending stairs,cycling,0,0.0
+ascending stairs,running,0,0.0
+ascending stairs,cycling,0,0.0
+ascending stairs,rowing,0,0.0
+descending stairs,standing,0,0.0
+descending stairs,lying,0,0.0
+descending stairs,sitting,0,0.0
+running,standing,0,0.0
+running,sitting,0,0.0
+running,lying,0,0.0
+cycling,rowing,0,0.0
+cycling,running,0,0.0
+cycling,jumping,0,0.0
+cycling,descending stairs,0,0.0
+cycling,brisk walking,0,0.0
+cycling,slow walking,0,0.0
+cycling,moderate walking,0,0.0
+cycling,lying,0,0.0
+running,moderate walking,0,0.0
+running,rowing,0,0.0
+running,cycling,0,0.0
+running,ascending stairs,0,0.0
+running,slow walking,0,0.0
+jumping,brisk walking,0,0.0
+jumping,moderate walking,0,0.0
+jumping,slow walking,0,0.0
+jumping,sitting,0,0.0
+jumping,lying,0,0.0
+jumping,cycling,0,0.0
+jumping,rowing,0,0.0
+rowing,standing,0,0.0
+rowing,slow walking,0,0.0
+rowing,moderate walking,0,0.0
+rowing,brisk walking,0,0.0
+rowing,ascending stairs,0,0.0
+rowing,descending stairs,0,0.0
+rowing,cycling,0,0.0
+rowing,running,0,0.0
+rowing,jumping,0,0.0
