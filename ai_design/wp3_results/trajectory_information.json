@@ -10,8 +10,30 @@
    0.5,
    2.0
   ],
-  "smooth_modes": 6
+  "smooth_modes": 6,
+  "smooth_modes_sweep": [
+   4,
+   6,
+   8,
+   10
+  ],
+  "sigma_bend_sweep_deg": [
+   0.5,
+   1.0,
+   2.0,
+   3.0,
+   5.0
+  ],
+  "prior_scale_sweep": [
+   0.5,
+   1.0,
+   1.5
+  ]
  },
+ "basis_definition": "DCT-II: b_k(t_n) = cos(pi k t_n), t_n = (n + 0.5) / N, n = 0..N-1, k = 0..K-1 (k = 0 is the constant mode)",
+ "basis_normalization": "each column scaled to unit Euclidean norm over the N frames (orthonormal columns)",
+ "boundary_condition": "even (Neumann, zero-slope) extension at both ends, implicit in DCT-II",
+ "time_interval": "dimensionless repetition time [0, 1]",
  "cases": {
   "C0_orientation_only": {
    "model": "M3",
@@ -20,8 +42,11 @@
    "frames": 41,
    "smooth_modes": 6,
    "smooth_dims": 126,
-   "rank": 30,
-   "n_well_determined": 18,
+   "numerical_rank": 30,
+   "rank_tolerance": 2.4621047625088117e-06,
+   "rank_tolerance_rule": "1e-09 x largest eigenvalue",
+   "meas_5deg_precision_eigendirections": 18,
+   "time_invariant_jacobian_rank": 18,
    "eigenvalues": [
     2462.0,
     2462.0,
@@ -158,8 +183,11 @@
    "frames": 41,
    "smooth_modes": 6,
    "smooth_dims": 126,
-   "rank": 56,
-   "n_well_determined": 36,
+   "numerical_rank": 56,
+   "rank_tolerance": 2.5890677399442227e-06,
+   "rank_tolerance_rule": "1e-09 x largest eigenvalue",
+   "meas_5deg_precision_eigendirections": 36,
+   "time_invariant_jacobian_rank": 36,
    "eigenvalues": [
     2589.0,
     2589.0,
@@ -296,8 +324,11 @@
    "frames": 41,
    "smooth_modes": 6,
    "smooth_dims": 126,
-   "rank": 47,
-   "n_well_determined": 28,
+   "numerical_rank": 47,
+   "rank_tolerance": 7.977526057539217e-05,
+   "rank_tolerance_rule": "1e-09 x largest eigenvalue",
+   "meas_5deg_precision_eigendirections": 28,
+   "time_invariant_jacobian_rank": null,
    "eigenvalues": [
     79780.0,
     21710.0,
@@ -434,8 +465,11 @@
    "frames": 41,
    "smooth_modes": 6,
    "smooth_dims": 126,
-   "rank": 48,
-   "n_well_determined": 25,
+   "numerical_rank": 48,
+   "rank_tolerance": 6.4676911010027805e-06,
+   "rank_tolerance_rule": "1e-09 x largest eigenvalue",
+   "meas_5deg_precision_eigendirections": 25,
+   "time_invariant_jacobian_rank": null,
    "eigenvalues": [
     6468.0,
     4200.0,
@@ -572,8 +606,11 @@
    "frames": 41,
    "smooth_modes": 6,
    "smooth_dims": 126,
-   "rank": 49,
-   "n_well_determined": 22,
+   "numerical_rank": 49,
+   "rank_tolerance": 2.916253286334111e-06,
+   "rank_tolerance_rule": "1e-09 x largest eigenvalue",
+   "meas_5deg_precision_eigendirections": 22,
+   "time_invariant_jacobian_rank": null,
    "eigenvalues": [
     2916.0,
     2692.0,
@@ -702,6 +739,278 @@
     0.0,
     0.0
    ]
+  }
+ },
+ "smooth_modes_sweep": {
+  "C0_orientation_only": {
+   "4": {
+    "model": "M3",
+    "config": "C0",
+    "kappa": null,
+    "frames": 41,
+    "smooth_modes": 4,
+    "smooth_dims": 84,
+    "numerical_rank": 24,
+    "rank_tolerance": 2.46210476250881e-06,
+    "rank_tolerance_rule": "1e-09 x largest eigenvalue",
+    "meas_5deg_precision_eigendirections": 12,
+    "time_invariant_jacobian_rank": 12
+   },
+   "6": {
+    "model": "M3",
+    "config": "C0",
+    "kappa": null,
+    "frames": 41,
+    "smooth_modes": 6,
+    "smooth_dims": 126,
+    "numerical_rank": 30,
+    "rank_tolerance": 2.4621047625088117e-06,
+    "rank_tolerance_rule": "1e-09 x largest eigenvalue",
+    "meas_5deg_precision_eigendirections": 18,
+    "time_invariant_jacobian_rank": 18
+   },
+   "8": {
+    "model": "M3",
+    "config": "C0",
+    "kappa": null,
+    "frames": 41,
+    "smooth_modes": 8,
+    "smooth_dims": 168,
+    "numerical_rank": 36,
+    "rank_tolerance": 2.46210476250881e-06,
+    "rank_tolerance_rule": "1e-09 x largest eigenvalue",
+    "meas_5deg_precision_eigendirections": 24,
+    "time_invariant_jacobian_rank": 24
+   },
+   "10": {
+    "model": "M3",
+    "config": "C0",
+    "kappa": null,
+    "frames": 41,
+    "smooth_modes": 10,
+    "smooth_dims": 210,
+    "numerical_rank": 42,
+    "rank_tolerance": 2.462104762508811e-06,
+    "rank_tolerance_rule": "1e-09 x largest eigenvalue",
+    "meas_5deg_precision_eigendirections": 30,
+    "time_invariant_jacobian_rank": 30
+   }
+  },
+  "C1_orientation_only": {
+   "4": {
+    "model": "M3",
+    "config": "C1",
+    "kappa": null,
+    "frames": 41,
+    "smooth_modes": 4,
+    "smooth_dims": 84,
+    "numerical_rank": 44,
+    "rank_tolerance": 2.589067739944221e-06,
+    "rank_tolerance_rule": "1e-09 x largest eigenvalue",
+    "meas_5deg_precision_eigendirections": 24,
+    "time_invariant_jacobian_rank": 24
+   },
+   "6": {
+    "model": "M3",
+    "config": "C1",
+    "kappa": null,
+    "frames": 41,
+    "smooth_modes": 6,
+    "smooth_dims": 126,
+    "numerical_rank": 56,
+    "rank_tolerance": 2.5890677399442227e-06,
+    "rank_tolerance_rule": "1e-09 x largest eigenvalue",
+    "meas_5deg_precision_eigendirections": 36,
+    "time_invariant_jacobian_rank": 36
+   },
+   "8": {
+    "model": "M3",
+    "config": "C1",
+    "kappa": null,
+    "frames": 41,
+    "smooth_modes": 8,
+    "smooth_dims": 168,
+    "numerical_rank": 68,
+    "rank_tolerance": 2.589067739944221e-06,
+    "rank_tolerance_rule": "1e-09 x largest eigenvalue",
+    "meas_5deg_precision_eigendirections": 48,
+    "time_invariant_jacobian_rank": 48
+   },
+   "10": {
+    "model": "M3",
+    "config": "C1",
+    "kappa": null,
+    "frames": 41,
+    "smooth_modes": 10,
+    "smooth_dims": 210,
+    "numerical_rank": 80,
+    "rank_tolerance": 2.5890677399442227e-06,
+    "rank_tolerance_rule": "1e-09 x largest eigenvalue",
+    "meas_5deg_precision_eigendirections": 60,
+    "time_invariant_jacobian_rank": 60
+   }
+  },
+  "C0_plus_acc_kappa_0.1": {
+   "4": {
+    "model": "M3",
+    "config": "C0",
+    "kappa": 0.1,
+    "frames": 41,
+    "smooth_modes": 4,
+    "smooth_dims": 84,
+    "numerical_rank": 38,
+    "rank_tolerance": 5.699805633095255e-06,
+    "rank_tolerance_rule": "1e-09 x largest eigenvalue",
+    "meas_5deg_precision_eigendirections": 18,
+    "time_invariant_jacobian_rank": null
+   },
+   "6": {
+    "model": "M3",
+    "config": "C0",
+    "kappa": 0.1,
+    "frames": 41,
+    "smooth_modes": 6,
+    "smooth_dims": 126,
+    "numerical_rank": 47,
+    "rank_tolerance": 7.977526057539217e-05,
+    "rank_tolerance_rule": "1e-09 x largest eigenvalue",
+    "meas_5deg_precision_eigendirections": 28,
+    "time_invariant_jacobian_rank": null
+   },
+   "8": {
+    "model": "M3",
+    "config": "C0",
+    "kappa": 0.1,
+    "frames": 41,
+    "smooth_modes": 8,
+    "smooth_dims": 168,
+    "numerical_rank": 56,
+    "rank_tolerance": 0.00042161684262721067,
+    "rank_tolerance_rule": "1e-09 x largest eigenvalue",
+    "meas_5deg_precision_eigendirections": 38,
+    "time_invariant_jacobian_rank": null
+   },
+   "10": {
+    "model": "M3",
+    "config": "C0",
+    "kappa": 0.1,
+    "frames": 41,
+    "smooth_modes": 10,
+    "smooth_dims": 210,
+    "numerical_rank": 65,
+    "rank_tolerance": 0.0012588110296835994,
+    "rank_tolerance_rule": "1e-09 x largest eigenvalue",
+    "meas_5deg_precision_eigendirections": 48,
+    "time_invariant_jacobian_rank": null
+   }
+  },
+  "C0_plus_acc_kappa_0.5": {
+   "4": {
+    "model": "M3",
+    "config": "C0",
+    "kappa": 0.5,
+    "frames": 41,
+    "smooth_modes": 4,
+    "smooth_dims": 84,
+    "numerical_rank": 38,
+    "rank_tolerance": 3.2262378631886088e-06,
+    "rank_tolerance_rule": "1e-09 x largest eigenvalue",
+    "meas_5deg_precision_eigendirections": 15,
+    "time_invariant_jacobian_rank": null
+   },
+   "6": {
+    "model": "M3",
+    "config": "C0",
+    "kappa": 0.5,
+    "frames": 41,
+    "smooth_modes": 6,
+    "smooth_dims": 126,
+    "numerical_rank": 48,
+    "rank_tolerance": 6.4676911010027805e-06,
+    "rank_tolerance_rule": "1e-09 x largest eigenvalue",
+    "meas_5deg_precision_eigendirections": 25,
+    "time_invariant_jacobian_rank": null
+   },
+   "8": {
+    "model": "M3",
+    "config": "C0",
+    "kappa": 0.5,
+    "frames": 41,
+    "smooth_modes": 8,
+    "smooth_dims": 168,
+    "numerical_rank": 59,
+    "rank_tolerance": 1.985902346106902e-05,
+    "rank_tolerance_rule": "1e-09 x largest eigenvalue",
+    "meas_5deg_precision_eigendirections": 35,
+    "time_invariant_jacobian_rank": null
+   },
+   "10": {
+    "model": "M3",
+    "config": "C0",
+    "kappa": 0.5,
+    "frames": 41,
+    "smooth_modes": 10,
+    "smooth_dims": 210,
+    "numerical_rank": 70,
+    "rank_tolerance": 5.322259874342711e-05,
+    "rank_tolerance_rule": "1e-09 x largest eigenvalue",
+    "meas_5deg_precision_eigendirections": 45,
+    "time_invariant_jacobian_rank": null
+   }
+  },
+  "C0_plus_acc_kappa_2.0": {
+   "4": {
+    "model": "M3",
+    "config": "C0",
+    "kappa": 2.0,
+    "frames": 41,
+    "smooth_modes": 4,
+    "smooth_dims": 84,
+    "numerical_rank": 38,
+    "rank_tolerance": 2.565463373486343e-06,
+    "rank_tolerance_rule": "1e-09 x largest eigenvalue",
+    "meas_5deg_precision_eigendirections": 12,
+    "time_invariant_jacobian_rank": null
+   },
+   "6": {
+    "model": "M3",
+    "config": "C0",
+    "kappa": 2.0,
+    "frames": 41,
+    "smooth_modes": 6,
+    "smooth_dims": 126,
+    "numerical_rank": 49,
+    "rank_tolerance": 2.916253286334111e-06,
+    "rank_tolerance_rule": "1e-09 x largest eigenvalue",
+    "meas_5deg_precision_eigendirections": 22,
+    "time_invariant_jacobian_rank": null
+   },
+   "8": {
+    "model": "M3",
+    "config": "C0",
+    "kappa": 2.0,
+    "frames": 41,
+    "smooth_modes": 8,
+    "smooth_dims": 168,
+    "numerical_rank": 61,
+    "rank_tolerance": 3.8372945159945406e-06,
+    "rank_tolerance_rule": "1e-09 x largest eigenvalue",
+    "meas_5deg_precision_eigendirections": 31,
+    "time_invariant_jacobian_rank": null
+   },
+   "10": {
+    "model": "M3",
+    "config": "C0",
+    "kappa": 2.0,
+    "frames": 41,
+    "smooth_modes": 10,
+    "smooth_dims": 210,
+    "numerical_rank": 72,
+    "rank_tolerance": 5.915815878213698e-06,
+    "rank_tolerance_rule": "1e-09 x largest eigenvalue",
+    "meas_5deg_precision_eigendirections": 41,
+    "time_invariant_jacobian_rank": null
+   }
   }
  }
 }

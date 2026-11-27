@@ -10,7 +10,25 @@
    0.5,
    2.0
   ],
-  "smooth_modes": 6
+  "smooth_modes": 6,
+  "smooth_modes_sweep": [
+   4,
+   6,
+   8,
+   10
+  ],
+  "sigma_bend_sweep_deg": [
+   0.5,
+   1.0,
+   2.0,
+   3.0,
+   5.0
+  ],
+  "prior_scale_sweep": [
+   0.5,
+   1.0,
+   1.5
+  ]
  },
  "rows": [
   {
@@ -29,7 +47,7 @@
    },
    "meas": {
     "rank": 3,
-    "n_well_determined": 3,
+    "meas_5deg_precision_eigendirections": 3,
     "logdet_plus": 18.04,
     "lambda_min_plus": 408.1,
     "cond_plus": 1.005,
@@ -44,7 +62,7 @@
    },
    "post": {
     "rank": 6,
-    "n_well_determined": 6,
+    "meas_5deg_precision_eigendirections": 6,
     "logdet_plus": 40.331,
     "lambda_min_plus": 181.7,
     "cond_plus": 72.25,
@@ -84,7 +102,7 @@
    },
    "meas": {
     "rank": 3,
-    "n_well_determined": 3,
+    "meas_5deg_precision_eigendirections": 3,
     "logdet_plus": 18.903,
     "lambda_min_plus": 544.2,
     "cond_plus": 1.005,
@@ -99,7 +117,7 @@
    },
    "post": {
     "rank": 6,
-    "n_well_determined": 6,
+    "meas_5deg_precision_eigendirections": 6,
     "logdet_plus": 41.118,
     "lambda_min_plus": 181.7,
     "cond_plus": 72.25,
@@ -139,7 +157,7 @@
    },
    "meas": {
     "rank": 3,
-    "n_well_determined": 3,
+    "meas_5deg_precision_eigendirections": 3,
     "logdet_plus": 18.903,
     "lambda_min_plus": 544.2,
     "cond_plus": 1.005,
@@ -154,7 +172,7 @@
    },
    "post": {
     "rank": 6,
-    "n_well_determined": 6,
+    "meas_5deg_precision_eigendirections": 6,
     "logdet_plus": 41.118,
     "lambda_min_plus": 181.7,
     "cond_plus": 72.25,
@@ -194,7 +212,7 @@
    },
    "meas": {
     "rank": 6,
-    "n_well_determined": 6,
+    "meas_5deg_precision_eigendirections": 6,
     "logdet_plus": 36.954,
     "lambda_min_plus": 272.8,
     "cond_plus": 3.008,
@@ -209,7 +227,7 @@
    },
    "post": {
     "rank": 6,
-    "n_well_determined": 6,
+    "meas_5deg_precision_eigendirections": 6,
     "logdet_plus": 42.597,
     "lambda_min_plus": 375.2,
     "cond_plus": 36.47,
@@ -261,7 +279,7 @@
    },
    "meas": {
     "rank": 3,
-    "n_well_determined": 3,
+    "meas_5deg_precision_eigendirections": 3,
     "logdet_plus": 20.127,
     "lambda_min_plus": 819.5,
     "cond_plus": 1.001,
@@ -279,7 +297,7 @@
    },
    "post": {
     "rank": 9,
-    "n_well_determined": 7,
+    "meas_5deg_precision_eigendirections": 7,
     "logdet_plus": 57.021,
     "lambda_min_plus": 57.49,
     "cond_plus": 228.4,
@@ -330,7 +348,7 @@
    },
    "meas": {
     "rank": 6,
-    "n_well_determined": 6,
+    "meas_5deg_precision_eigendirections": 6,
     "logdet_plus": 36.959,
     "lambda_min_plus": 273.2,
     "cond_plus": 3.004,
@@ -348,7 +366,7 @@
    },
    "post": {
     "rank": 9,
-    "n_well_determined": 9,
+    "meas_5deg_precision_eigendirections": 9,
     "logdet_plus": 60.806,
     "lambda_min_plus": 181.7,
     "cond_plus": 72.25,
@@ -399,7 +417,7 @@
    },
    "meas": {
     "rank": 3,
-    "n_well_determined": 3,
+    "meas_5deg_precision_eigendirections": 3,
     "logdet_plus": 20.991,
     "lambda_min_plus": 1093.0,
     "cond_plus": 1.001,
@@ -417,7 +435,7 @@
    },
    "post": {
     "rank": 9,
-    "n_well_determined": 7,
+    "meas_5deg_precision_eigendirections": 7,
     "logdet_plus": 57.808,
     "lambda_min_plus": 57.6,
     "cond_plus": 228.0,
@@ -468,7 +486,7 @@
    },
    "meas": {
     "rank": 6,
-    "n_well_determined": 6,
+    "meas_5deg_precision_eigendirections": 6,
     "logdet_plus": 39.041,
     "lambda_min_plus": 346.7,
     "cond_plus": 3.734,
@@ -486,7 +504,7 @@
    },
    "post": {
     "rank": 9,
-    "n_well_determined": 7,
+    "meas_5deg_precision_eigendirections": 7,
     "logdet_plus": 59.288,
     "lambda_min_plus": 57.58,
     "cond_plus": 237.8,
@@ -537,7 +555,7 @@
    },
    "meas": {
     "rank": 4,
-    "n_well_determined": 4,
+    "meas_5deg_precision_eigendirections": 4,
     "logdet_plus": 26.145,
     "lambda_min_plus": 240.4,
     "cond_plus": 5.828,
@@ -555,7 +573,7 @@
    },
    "post": {
     "rank": 9,
-    "n_well_determined": 8,
+    "meas_5deg_precision_eigendirections": 8,
     "logdet_plus": 58.904,
     "lambda_min_plus": 57.49,
     "cond_plus": 228.4,
@@ -606,7 +624,7 @@
    },
    "meas": {
     "rank": 4,
-    "n_well_determined": 4,
+    "meas_5deg_precision_eigendirections": 4,
     "logdet_plus": 26.145,
     "lambda_min_plus": 240.4,
     "cond_plus": 5.828,
@@ -624,7 +642,7 @@
    },
    "post": {
     "rank": 9,
-    "n_well_determined": 8,
+    "meas_5deg_precision_eigendirections": 8,
     "logdet_plus": 58.904,
     "lambda_min_plus": 57.49,
     "cond_plus": 228.4,
@@ -675,7 +693,7 @@
    },
    "meas": {
     "rank": 3,
-    "n_well_determined": 3,
+    "meas_5deg_precision_eigendirections": 3,
     "logdet_plus": 23.426,
     "lambda_min_plus": 2462.0,
     "cond_plus": 1.0,
@@ -705,7 +723,7 @@
    },
    "post": {
     "rank": 21,
-    "n_well_determined": 20,
+    "meas_5deg_precision_eigendirections": 20,
     "logdet_plus": 139.386,
     "lambda_min_plus": 82.42,
     "cond_plus": 159.3,
@@ -772,7 +790,7 @@
    },
    "meas": {
     "rank": 6,
-    "n_well_determined": 6,
+    "meas_5deg_precision_eigendirections": 6,
     "logdet_plus": 43.203,
     "lambda_min_plus": 693.6,
     "cond_plus": 3.733,
@@ -802,7 +820,7 @@
    },
    "post": {
     "rank": 21,
-    "n_well_determined": 20,
+    "meas_5deg_precision_eigendirections": 20,
     "logdet_plus": 143.177,
     "lambda_min_plus": 119.3,
     "cond_plus": 110.1,
@@ -869,7 +887,7 @@
    },
    "meas": {
     "rank": 6,
-    "n_well_determined": 6,
+    "meas_5deg_precision_eigendirections": 6,
     "logdet_plus": 41.792,
     "lambda_min_plus": 387.6,
     "cond_plus": 7.469,
@@ -899,7 +917,7 @@
    },
    "post": {
     "rank": 21,
-    "n_well_determined": 21,
+    "meas_5deg_precision_eigendirections": 21,
     "logdet_plus": 143.207,
     "lambda_min_plus": 181.7,
     "cond_plus": 72.25,
@@ -966,7 +984,7 @@
    },
    "meas": {
     "rank": 6,
-    "n_well_determined": 6,
+    "meas_5deg_precision_eigendirections": 6,
     "logdet_plus": 42.34,
     "lambda_min_plus": 391.7,
     "cond_plus": 8.777,
@@ -996,7 +1014,7 @@
    },
    "post": {
     "rank": 21,
-    "n_well_determined": 20,
+    "meas_5deg_precision_eigendirections": 20,
     "logdet_plus": 141.653,
     "lambda_min_plus": 82.9,
     "cond_plus": 165.7,
@@ -1063,7 +1081,7 @@
    },
    "meas": {
     "rank": 4,
-    "n_well_determined": 4,
+    "meas_5deg_precision_eigendirections": 4,
     "logdet_plus": 30.424,
     "lambda_min_plus": 515.2,
     "cond_plus": 10.15,
@@ -1093,7 +1111,7 @@
    },
    "post": {
     "rank": 21,
-    "n_well_determined": 20,
+    "meas_5deg_precision_eigendirections": 20,
     "logdet_plus": 141.268,
     "lambda_min_plus": 82.42,
     "cond_plus": 159.3,
@@ -1160,7 +1178,7 @@
    },
    "meas": {
     "rank": 7,
-    "n_well_determined": 7,
+    "meas_5deg_precision_eigendirections": 7,
     "logdet_plus": 49.168,
     "lambda_min_plus": 219.9,
     "cond_plus": 13.93,
@@ -1190,7 +1208,7 @@
    },
    "post": {
     "rank": 21,
-    "n_well_determined": 20,
+    "meas_5deg_precision_eigendirections": 20,
     "logdet_plus": 144.517,
     "lambda_min_plus": 82.42,
     "cond_plus": 159.3,

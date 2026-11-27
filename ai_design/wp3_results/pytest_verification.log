@@ -1,0 +1,66 @@
+# pytest verification log (verbatim pytest -v output; local paths replaced by <repo>, <p0-worktree>, <venv>)
+# generated: 2026-11-28 02:20 CST
+# WP3 branch vm/wp3-spine-observability @ 005d60e
+# P0  branch vm/p0-diagnostics        @ 59b2749
+
+===== pytest -v tests/test_spine_offline.py =====
+============================= test session starts ==============================
+platform linux -- Python 3.12.15, pytest-9.2.0, pluggy-1.7.0 -- <venv>/bin/python
+rootdir: <repo>
+collecting ... collected 37 items
+
+tests/test_spine_offline.py::test_orientation_jacobian_matches_finite_difference[M1] PASSED [  2%]
+tests/test_spine_offline.py::test_orientation_jacobian_matches_finite_difference[M2] PASSED [  5%]
+tests/test_spine_offline.py::test_orientation_jacobian_matches_finite_difference[M3] PASSED [  8%]
+tests/test_spine_offline.py::test_jacobian_relative_error_across_step_sizes[M1] PASSED [ 10%]
+tests/test_spine_offline.py::test_jacobian_relative_error_across_step_sizes[M2] PASSED [ 13%]
+tests/test_spine_offline.py::test_jacobian_relative_error_across_step_sizes[M3] PASSED [ 16%]
+tests/test_spine_offline.py::test_right_jacobian_matches_sympy_derivation PASSED [ 18%]
+tests/test_spine_offline.py::test_position_jacobian_matches_finite_difference[M1] PASSED [ 21%]
+tests/test_spine_offline.py::test_position_jacobian_matches_finite_difference[M2] PASSED [ 24%]
+tests/test_spine_offline.py::test_position_jacobian_matches_finite_difference[M3] PASSED [ 27%]
+tests/test_spine_offline.py::test_orientation_only_rank[key0] PASSED     [ 29%]
+tests/test_spine_offline.py::test_orientation_only_rank[key1] PASSED     [ 32%]
+tests/test_spine_offline.py::test_orientation_only_rank[key2] PASSED     [ 35%]
+tests/test_spine_offline.py::test_orientation_only_rank[key3] PASSED     [ 37%]
+tests/test_spine_offline.py::test_orientation_only_rank[key4] PASSED     [ 40%]
+tests/test_spine_offline.py::test_orientation_only_rank[key5] PASSED     [ 43%]
+tests/test_spine_offline.py::test_orientation_only_rank[key6] PASSED     [ 45%]
+tests/test_spine_offline.py::test_orientation_only_rank[key7] PASSED     [ 48%]
+tests/test_spine_offline.py::test_orientation_only_rank[key8] PASSED     [ 51%]
+tests/test_spine_offline.py::test_orientation_only_rank[key9] PASSED     [ 54%]
+tests/test_spine_offline.py::test_orientation_only_rank[key10] PASSED    [ 56%]
+tests/test_spine_offline.py::test_orientation_only_rank[key11] PASSED    [ 59%]
+tests/test_spine_offline.py::test_orientation_only_rank[key12] PASSED    [ 62%]
+tests/test_spine_offline.py::test_orientation_only_rank[key13] PASSED    [ 64%]
+tests/test_spine_offline.py::test_orientation_only_rank[key14] PASSED    [ 67%]
+tests/test_spine_offline.py::test_orientation_only_rank[key15] PASSED    [ 70%]
+tests/test_spine_offline.py::test_bend_sensor_not_representable_in_m1 PASSED [ 72%]
+tests/test_spine_offline.py::test_information_vanishes_for_infinite_noise PASSED [ 75%]
+tests/test_spine_offline.py::test_qoi_identifiability_pattern PASSED     [ 78%]
+tests/test_spine_offline.py::test_acceleration_adds_weak_information PASSED [ 81%]
+tests/test_spine_offline.py::test_deadlift_pose_flexes_forward PASSED    [ 83%]
+tests/test_spine_offline.py::test_dct_basis_is_orthonormal PASSED        [ 86%]
+tests/test_spine_offline.py::test_slow_mode_precision_count_equals_3k_for_c0 PASSED [ 89%]
+tests/test_spine_offline.py::test_bend_noise_sweep_measurement_std[0.5] PASSED [ 91%]
+tests/test_spine_offline.py::test_bend_noise_sweep_measurement_std[2.0] PASSED [ 94%]
+tests/test_spine_offline.py::test_bend_noise_sweep_measurement_std[5.0] PASSED [ 97%]
+tests/test_spine_offline.py::test_prior_scale_moves_unidentified_more_than_identified PASSED [100%]
+
+============================== 37 passed in 2.79s ==============================
+
+===== pytest -v tests/test_diag_p0.py =====
+============================= test session starts ==============================
+platform linux -- Python 3.12.15, pytest-9.2.0, pluggy-1.7.0 -- <venv>/bin/python
+rootdir: <p0-worktree>
+collecting ... collected 7 items
+
+tests/test_diag_p0.py::test_fixture_matches_loader_layout PASSED         [ 14%]
+tests/test_diag_p0.py::test_accel_unit_g PASSED                          [ 28%]
+tests/test_diag_p0.py::test_accel_unit_mps2 PASSED                       [ 42%]
+tests/test_diag_p0.py::test_accel_unit_never_flips_under_heavy_smoothing PASSED [ 57%]
+tests/test_diag_p0.py::test_accel_unit_specific_force_is_a_third_hypothesis PASSED [ 71%]
+tests/test_diag_p0.py::test_orientation_independence_flags_hinge_perfect_quaternions PASSED [ 85%]
+tests/test_diag_p0.py::test_subject_protocol_cadence_and_split_audit PASSED [100%]
+
+============================== 7 passed in 5.06s ===============================
