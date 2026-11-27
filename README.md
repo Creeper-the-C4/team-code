@@ -2,6 +2,17 @@
 
 本仓库（`Creeper-the-C4/team-code`）用于沉淀我们团队在 **2026“认证杯”ICM C 题** 中的完整调研、文献审计、数学建模文档、可复现代码与实验结果。
 
+## 最新进度 2026年11月27日
+
+已独立完成30名参与者的数据预处理，当前进入 **Task 1 分类基线准备阶段**。本轮尚未训练模型，下面V3.0内容是研究路线，不能视为已实现的模型或实验结论。
+
+- 13,454,722帧、2,381个官方试次；220,702个2秒窗、108,613个4秒窗。
+- 已生成逐人连续缓存、试次与窗口索引、每传感器40项基础特征和全量质量检查。
+- 原始信号无NaN或无穷值，试次覆盖完整；2秒窗口数量与队友报告相同，处理细节仍待代码对照。
+- 加速度保留原值，单位分歧尚未解决；本轮未乘9.81、未去重力、未对世界系信号重复旋转。
+
+入口：[进度说明](docs/05_independent_preprocessing_progress.md) · [中文PDF报告](docs/reports/2026-11-27_independent_preprocessing_progress.pdf) · [处理结果与实际索引](results/preprocessing/independent_v1/README.md) · [复现脚本](scripts/preprocessing/README.md)
+
 ## 核心研究主线（V3.0）
 **人体运动的多尺度可观测性与最小传感器设计**（$\mathrm{Measurement} \to \mathrm{Representation} \to \mathrm{Observability} \to \mathrm{Inference}$）：
 * **Task 1（活动识别与动力学特征）**：严格修复 2,381 个试次边界与测试集早停泄露，基于 13 类监督分类（LightGBM 主基线 + Sensor-Dropout 轻量时序网络）、粘性 HMM、相对姿态及无量纲步频/Froude 假设检验建立严谨跨被试基线。
@@ -15,15 +26,27 @@
 
 ```text
 team-code/
-├── README.md                              # 本总览说明
-├── .gitignore                             # 忽略大体积原始数据/缓存/模型权重与密钥
-└── docs/
-    ├── 00_problem_statement.md            # 官方赛题原文要点与红线约束
-    ├── 01_multi_ai_discussion_pack.md     # 全程多方 AI 讨论原文归档（V1→V3）
-    ├── 02_repo_audit_report.md            # 官方 FudanBSRL 仓库一手源码审计报告
-    ├── 03_literature_map_v3.md            # 经三轮核验与 DOI 纠偏的 V3.0 文献库
-    ├── 04_v3_blueprint_and_wps.md         # V3.0 建模蓝图、数学纠偏与 WP1–WP3 规划
-    └── reference_images/                  # 19 张参考示意图（脊柱解剖、论文图例等）
+├── README.md
+├── .gitignore
+├── docs/
+│   ├── 00_problem_statement.md
+│   ├── 01_multi_ai_discussion_pack.md
+│   ├── 02_repo_audit_report.md
+│   ├── 03_literature_map_v3.md
+│   ├── 04_v3_blueprint_and_wps.md
+│   ├── 05_independent_preprocessing_progress.md
+│   ├── reports/                    # 中文进度报告
+│   ├── archive/                    # 本轮更新前的文档归档
+│   └── reference_images/
+├── scripts/preprocessing/          # 预处理与数据读取脚本
+└── results/preprocessing/independent_v1/
+    ├── README.md
+    ├── indices_and_quality.zip     # 30人真实试次/窗口索引和质量结果
+    ├── reproducibility_handoff.zip # 脚本 元数据 环境记录 报告
+    ├── final_report.json
+    └── ...                        # 分布表 物理诊断 身体尺寸和模式定义
 ```
 
 > **数据约定**：原始数据集（`dataset.zip`, ~8.79 GB）及二进制切片缓存**不提交至本仓库**，请按 `.gitignore` 规则保存在本地数据目录。
+
+小体积的结果表和索引交付包已按路径显式纳入版本管理；原始数据、约9 GB的连续缓存、约600 MB的特征数组仍保留在云端。旧README及旧忽略规则归档于 `docs/archive/2026-11-27_before_independent_preprocessing`。

@@ -1,0 +1,51 @@
+{
+  "completed_subjects": 30,
+  "expected_subjects": 30,
+  "total_rows": 13454722,
+  "total_trials": 2381,
+  "windows_2s": 220702,
+  "windows_4s": 108613,
+  "nan_count": 0,
+  "inf_count": 0,
+  "uncovered_rows": 0,
+  "free_disk_bytes": 11848474624,
+  "updated_utc": "2026-11-27T14:13:15.767781+00:00",
+  "training_started": false,
+  "report_generated_utc": "2026-11-27T14:16:34.338939+00:00",
+  "source_files_checked": 31,
+  "all_extracted_crc_match_archive": true,
+  "total_duration_hours": 62.29037962962963,
+  "window_statistics": {
+    "2": {
+      "mixed": 8234,
+      "purity_below_0_9": 6691,
+      "invalid": 0
+    },
+    "4": {
+      "mixed": 6958,
+      "purity_below_0_9": 5885,
+      "invalid": 0
+    }
+  },
+  "anthropometric_subjects": 30,
+  "anthropometric_definition_rows": 3,
+  "access_validation_passed": true,
+  "source_crc_scope": "Extracted file size and full-file CRC compared with uploaded ZIP directory; no upstream cryptographic checksum available.",
+  "unit_decision": "No acceleration rescaling; no gravity subtraction; raw channels retained.",
+  "teammate_2s_windows_reported": 220702,
+  "teammate_window_count_difference": 0,
+  "invalid_quaternion_samples": 0,
+  "quaternion_norm_deviations_over_1e_3": 0,
+  "quaternion_sign_flip_pairs": 9604690,
+  "gyro_world_fit_median_r2": 0.885402902544471,
+  "gyro_body_fit_median_r2": 0.0814824797473851,
+  "gyro_diagnostics_scope": "Every-second adjacent-frame pairs inside trials, quaternion-rate magnitude 0.2-20 rad/s; best scalar fit. Convention diagnostic only.",
+  "baseline_features": {
+    "subjects": 30,
+    "windows": 220702,
+    "bytes": 600313280,
+    "nan_values": 22690,
+    "inf_values": 0,
+    "training_started": false
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "height_m": {
+    "source_column": "Height(cm)",
+    "conversion": "divide by 100",
+    "source_unit": "cm",
+    "output_unit": "m"
+  },
+  "head_height_m": {
+    "source_column": "Head Height(cm)",
+    "conversion": "divide by 100",
+    "source_unit": "cm",
+    "output_unit": "m"
+  },
+  "neck_length_m": {
+    "source_column": "Neck Length(cm)",
+    "conversion": "divide by 100",
+    "source_unit": "cm",
+    "output_unit": "m"
+  },
+  "torso_length_m": {
+    "source_column": "Torso Length(cm)",
+    "conversion": "divide by 100",
+    "source_unit": "cm",
+    "output_unit": "m"
+  },
+  "shoulder_width_m": {
+    "source_column": "Shoulder Width(cm)",
+    "conversion": "divide by 100",
+    "source_unit": "cm",
+    "output_unit": "m"
+  },
+  "upper_arm_length_m": {
+    "source_column": "Upper Arm Length(cm)",
+    "conversion": "divide by 100",
+    "source_unit": "cm",
+    "output_unit": "m"
+  },
+  "forearm_length_m": {
+    "source_column": "Forearm Length(cm)",
+    "conversion": "divide by 100",
+    "source_unit": "cm",
+    "output_unit": "m"
+  },
+  "bi_iliac_breadth_m": {
+    "source_column": "Bi-iliac Breadth(cm)",
+    "conversion": "divide by 100",
+    "source_unit": "cm",
+    "output_unit": "m"
+  },
+  "thigh_length_m": {
+    "source_column": "Thigh Length(cm)",
+    "conversion": "divide by 100",
+    "source_unit": "cm",
+    "output_unit": "m"
+  },
+  "shank_length_m": {
+    "source_column": "Shank Length(cm)",
+    "conversion": "divide by 100",
+    "source_unit": "cm",
+    "output_unit": "m"
+  },
+  "heel_height_m": {
+    "source_column": "Heel Height(cm)",
+    "conversion": "divide by 100",
+    "source_unit": "cm",
+    "output_unit": "m"
+  },
+  "foot_length_m": {
+    "source_column": "Foot Length(cm)",
+    "conversion": "divide by 100",
+    "source_unit": "cm",
+    "output_unit": "m"
+  }
+}

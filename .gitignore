@@ -45,3 +45,9 @@ env/
 *.pem
 .DS_Store
 Thumbs.db
+
+# Explicit small independent-preprocessing deliverables
+!results/preprocessing/independent_v1/*.csv
+!results/preprocessing/independent_v1/indices_and_quality.zip
+!results/preprocessing/independent_v1/reproducibility_handoff.zip
+!scripts/preprocessing/trial_information.csv

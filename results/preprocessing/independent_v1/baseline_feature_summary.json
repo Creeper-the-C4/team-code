@@ -1,0 +1,8 @@
+{
+  "subjects": 30,
+  "windows": 220702,
+  "bytes": 600313280,
+  "nan_values": 22690,
+  "inf_values": 0,
+  "training_started": false
+}

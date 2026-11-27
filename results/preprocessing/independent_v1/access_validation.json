@@ -1,0 +1,13 @@
+{
+  "passed": true,
+  "checks": [
+    "P01 source/cache sample parity (previous check)",
+    "trial-local quaternion continuity and norms",
+    "sensor-mask read equality",
+    "feature locality under hidden-sensor perturbation",
+    "quaternion sign invariance",
+    "rotation features versus scipy reference",
+    "feature dependency guard",
+    "held-out normalization guard"
+  ]
+}

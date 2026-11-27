@@ -1,0 +1,14 @@
+{
+  "reason": "Preserve previous overview and ignore rules before publishing independent preprocessing results",
+  "source_commit": "ed372d28ccc3d4921c5a4b68b358f14682bf092c",
+  "files": {
+    "README.md": {
+      "git_blob_sha": "b762b1c6514371a8ff90c0862507c29c5cbcf07a",
+      "sha256": "0245b4f6b00c3f1d841d19e38db29fc03f77444405476658bf2ccf5accfc162d"
+    },
+    ".gitignore": {
+      "git_blob_sha": "a62a0e947509376d4a20153d95593f340fabdc5d",
+      "sha256": "0c0b9604a0b78d661364353823f147520a54c425d80599b322f42f02f91f1c6a"
+    }
+  }
+}

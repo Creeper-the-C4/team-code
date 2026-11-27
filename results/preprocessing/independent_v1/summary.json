@@ -1,0 +1,14 @@
+{
+  "completed_subjects": 30,
+  "expected_subjects": 30,
+  "total_rows": 13454722,
+  "total_trials": 2381,
+  "windows_2s": 220702,
+  "windows_4s": 108613,
+  "nan_count": 0,
+  "inf_count": 0,
+  "uncovered_rows": 0,
+  "free_disk_bytes": 12364386304,
+  "updated_utc": "2026-11-27T14:13:15.767781+00:00",
+  "training_started": false
+}

@@ -1,0 +1,8 @@
+{
+  "all_30_subject_shapes_valid": true,
+  "feature_rows_align_with_window_index": true,
+  "feature_infinities": 0,
+  "undefined_dominant_frequency_values": 22690,
+  "unexpected_feature_nan": 0,
+  "models_trained": false
+}

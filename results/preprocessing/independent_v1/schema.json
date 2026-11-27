@@ -1,0 +1,56 @@
+{
+  "version": "independent_v1",
+  "sample_rate_hz": 60,
+  "sensors": [
+    "LowerBack",
+    "RightThigh",
+    "RightShank",
+    "RightFoot",
+    "LeftThigh",
+    "LeftShank",
+    "LeftFoot",
+    "UpperBack",
+    "Head",
+    "RightShoulder",
+    "RightUpperArm",
+    "RightForeArm",
+    "RightWrist",
+    "LeftShoulder",
+    "LeftUpperArm",
+    "LeftForeArm",
+    "LeftWrist"
+  ],
+  "channels": [
+    "Acc_X",
+    "Acc_Y",
+    "Acc_Z",
+    "Gyr_X",
+    "Gyr_Y",
+    "Gyr_Z",
+    "Quat_X",
+    "Quat_Y",
+    "Quat_Z",
+    "Quat_W"
+  ],
+  "signals_shape": "[frame,17,10]",
+  "signals_dtype": "float32",
+  "labels_dtype": "int8",
+  "units": {
+    "acceleration": "source unchanged; publication declares m/s^2; disputed g interpretation not applied",
+    "angular_velocity": "publication declares rad/s",
+    "quaternion": "xyzw, source unchanged"
+  },
+  "public_source": "https://raw.githubusercontent.com/FudanBSRL/Comprehensive-IMU-Dataset/main/trial_information.csv",
+  "trials_sha256": "4698da6a7f37318bd9b7779a3909f1361a33a532ef65ea0c23c3213ec63d4c89",
+  "window_bounds": "zero-based half-open, within official zero-based inclusive trial bounds",
+  "windows_seconds": [
+    2,
+    4
+  ],
+  "overlap": 0.5,
+  "normalization": "none; fit transforms per training fold only",
+  "quaternion_processing": "raw retained; normalize and sign-align within trial in loader",
+  "missing_data_policy": "retain and flag; no imputation in shared cache",
+  "majority_tie_rule": "lowest activity ID; tie flag retained",
+  "quality_channel_means": "descriptive QC only; NEVER training normalization statistics"
+}
