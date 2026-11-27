@@ -342,6 +342,8 @@ def test_cli_h3_reads_only_its_own_fold_layout(fixture_root, tmp_path):
 def test_wnoj_kinematic_consistency_against_ode():
     """Verify xi_dot = Jl_inv(xi) w = w - (xi x w)/2 + O(||xi||^2) via direct ODE integration."""
     from scipy.integrate import solve_ivp
+    from task3 import so3_lie as so3
+    from task3 import wnoj_prior as wnoj
     w0 = np.array([1.2, -0.7, 0.5])
     a0 = np.array([-0.8, 1.5, 2.0])
     r0 = so3.exp_so3(np.array([0.3, -0.4, 0.2]))
@@ -369,7 +371,14 @@ def test_wnoj_kinematic_consistency_against_ode():
     r_dt = sol_dt.y[:, 0].reshape(3, 3)
     w_dt = w0 + a0 * dt
     e, _ = wnoj.residual(r0[None], w0[None], a0[None], r_dt[None], w_dt[None], a0[None], dt)
-    assert np.linalg.norm(e[0, 3:6]) < 1e-4
+    bound = 0.5 * np.linalg.norm(w0) * np.linalg.norm(a0) * dt ** 2      # O(dt^2) local term
+    assert np.linalg.norm(e[0, 3:6]) < bound
+    half = solve_ivp(lambda t, y: (so3.hat(w0 + a0 * t) @ y.reshape(3, 3)).ravel(),
+                     [0.0, dt / 2], r0.ravel(), t_eval=[dt / 2], rtol=1e-13, atol=1e-14)
+    e_half, _ = wnoj.residual(r0[None], w0[None], a0[None], half.y[:, 0].reshape(3, 3)[None],
+                              (w0 + a0 * dt / 2)[None], a0[None], dt / 2)
+    ratio = np.linalg.norm(e[0, 3:6]) / np.linalg.norm(e_half[0, 3:6])
+    assert 3.6 < ratio < 4.4                                            # halving dt -> 1/4
 
 
 def test_fold_subset_parsing_rejects_invalid_entries(tmp_path):

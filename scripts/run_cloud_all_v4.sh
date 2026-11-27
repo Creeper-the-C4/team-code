@@ -120,12 +120,13 @@ import numpy as np
 import pandas as pd
 
 sys.path.insert(0, str(Path.cwd()))
-from scripts.diagnostics import make_synthetic_fixture as fix
+sys.path.insert(0, str(Path.cwd() / "scripts" / "diagnostics"))
+import make_synthetic_fixture as fix
 
 root = Path(sys.argv[1])
 splits_path = Path(sys.argv[2])
 dims_path = Path(sys.argv[3])
-fix.build(root, unit='mps2', subjects=(1, 2, 3, 4))
+fix.build(root, acc_unit='mps2', subjects=(1, 2, 3, 4))
 
 # Ensure both 2s and 4s window parquet tables exist for WP1 extraction
 for sid in (1, 2, 3, 4):
@@ -152,18 +153,16 @@ for sid in (1, 2, 3, 4):
                 wid += 1
         pd.DataFrame(rows).to_parquet(sdir / f'windows_{win_sec}s.parquet', index=False)
 
-splits = {
-    'folds': [
-        {'fold': 0, 'train': [1, 2], 'validation': [3], 'test': [4]},
-        {'fold': 1, 'train': [3, 4], 'validation': [1], 'test': [2]},
-    ]
-}
+subs = [1, 2, 3, 4]
+splits = {'folds': [{'fold': i, 'test': [subs[i]], 'validation': [subs[(i + 1) % 4]],
+                     'train': [x for x in subs if x not in (subs[i], subs[(i + 1) % 4])]}
+                    for i in range(4)]}      # every participant tested exactly once
 splits_path.write_text(json.dumps(splits, indent=2) + '\n', encoding='utf-8')
 cols = {
-    'body_height': 1.75, 'hip_width': 0.30, 'shoulder_width': 0.40,
-    'thigh_length': 0.43, 'shank_length': 0.42, 'foot_length': 0.26,
-    'upper_arm_length': 0.30, 'forearm_length': 0.26,
-    'trunk_length': 0.50, 'neck_length': 0.12, 'head_height': 0.22,
+    'height_m': 1.75, 'head_height_m': 0.19, 'neck_length_m': 0.10, 'torso_length_m': 0.50,
+    'shoulder_width_m': 0.40, 'upper_arm_length_m': 0.30, 'forearm_length_m': 0.26,
+    'bi_iliac_breadth_m': 0.27, 'thigh_length_m': 0.43, 'shank_length_m': 0.42,
+    'heel_height_m': 0.12, 'foot_length_m': 0.26,
 }
 lines = ['subject,' + ','.join(cols)] + [
     f'{s},' + ','.join(str(v) for v in cols.values()) for s in (1, 2, 3, 4)
