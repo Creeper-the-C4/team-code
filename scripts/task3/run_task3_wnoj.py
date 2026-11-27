@@ -137,6 +137,15 @@ def parse_fold_subsets(path, fold, ks):
         layouts = {k: v for k, v in layouts.items() if k in ks}
     if not layouts:
         raise ValueError(f'no usable layout for fold {fold} in {path}')
+    valid_sensors = set(SENSORS)
+    for k, obs in layouts.items():
+        if len(obs) != k:
+            raise ValueError(f'fold {fold} layout key k={k} has {len(obs)} sensors in {path}')
+        if len(set(obs)) != len(obs):
+            raise ValueError(f'fold {fold} layout k={k} contains duplicate sensors in {path}')
+        unknown = [s for s in obs if s not in valid_sensors]
+        if unknown:
+            raise ValueError(f'fold {fold} layout k={k} has unknown sensors {unknown} in {path}')
     return layouts
 
 
@@ -276,7 +285,7 @@ def main(argv=None):
     ap.add_argument('--joint-scale', type=float, default=1.0)
     ap.add_argument('--no-calibrate', action='store_true')
     ap.add_argument('--no-ablation', action='store_true')
-    ap.add_argument('--workers', type=int, default=min(8, os.cpu_count() or 1))
+    ap.add_argument('--workers', type=int, default=min(4, os.cpu_count() or 1))
     ap.add_argument('--resume', action='store_true')
     ap.add_argument('--overwrite', action='store_true')
     args = ap.parse_args(argv)
@@ -449,6 +458,13 @@ def main(argv=None):
     result = {'reference_type': REFERENCE,
               'note': 'Withheld-sensor reference: the hidden sensor\'s own recording, '
                       'not an independent optical ground truth.',
+              'v3_uses_standing_calibration_all_sensors': bool(dims is not None),
+              'v3_calibration_note': (
+                  'V3 FK end-point displacement uses a standing-pose calibration across all '
+                  '17 sensors of the test participant and is therefore a derived conditional '
+                  'metric, NOT a strictly held-out sensor metric. Primary strictly held-out '
+                  'results are V1 (geodesic orientation error) and V2 (gyro RMSE).'
+              ),
               'accel_unit': 'none', 'accel_unit_requested': args.accel_unit,
               'accel_factor_registered': bool(smoother.ACCEL_FACTOR_REGISTERED),
               'config': vars(args), 'folds': fold_info, 'input_masks': input_masks,

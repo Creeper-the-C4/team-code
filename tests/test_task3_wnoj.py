@@ -337,3 +337,52 @@ def test_cli_h3_reads_only_its_own_fold_layout(fixture_root, tmp_path):
         withheld = info['schemes']['H3:k3']['withheld']
         assert set(withheld) == set(SENSORS) - set(layouts[fold]['3'])
         assert not set(withheld) & set(info['schemes']['H3:k3']['observed'])
+
+
+def test_wnoj_kinematic_consistency_against_ode():
+    """Verify xi_dot = Jl_inv(xi) w = w - (xi x w)/2 + O(||xi||^2) via direct ODE integration."""
+    from scipy.integrate import solve_ivp
+    w0 = np.array([1.2, -0.7, 0.5])
+    a0 = np.array([-0.8, 1.5, 2.0])
+    r0 = so3.exp_so3(np.array([0.3, -0.4, 0.2]))
+    t_end, h = 0.20, 1e-6
+    sol = solve_ivp(lambda t, y: (so3.hat(w0 + a0 * t) @ y.reshape(3, 3)).ravel(),
+                    [0.0, t_end + h], r0.ravel(), t_eval=[t_end - h, t_end, t_end + h],
+                    rtol=1e-13, atol=1e-14)
+    rm, r1, rp = [sol.y[:, i].reshape(3, 3) for i in range(3)]
+    xi_m = so3.log_so3(rm @ r0.T)
+    xi = so3.log_so3(r1 @ r0.T)
+    xi_p = so3.log_so3(rp @ r0.T)
+    xi_dot_exact = (xi_p - xi_m) / (2.0 * h)
+    w1 = w0 + a0 * t_end
+    # Exact Jl_inv(xi) @ w1 matches ODE derivative to integration precision
+    assert np.linalg.norm(so3.jl_inv(xi) @ w1 - xi_dot_exact) < 1e-8
+    # First-order approximation used in wnoj_prior.residual: w1 - 0.5 * (xi x w1)
+    err_minus = np.linalg.norm((w1 - 0.5 * np.cross(xi, w1)) - xi_dot_exact)
+    err_plus = np.linalg.norm((w1 + 0.5 * np.cross(xi, w1)) - xi_dot_exact)
+    assert err_minus < 5e-3
+    assert err_plus > 20.0 * err_minus
+    # At 60 Hz (dt = 1/60), WNOJ residual e2 with exact ODE trajectory is O(dt^2)
+    dt = 1.0 / 60.0
+    sol_dt = solve_ivp(lambda t, y: (so3.hat(w0 + a0 * t) @ y.reshape(3, 3)).ravel(),
+                       [0.0, dt], r0.ravel(), t_eval=[dt], rtol=1e-13, atol=1e-14)
+    r_dt = sol_dt.y[:, 0].reshape(3, 3)
+    w_dt = w0 + a0 * dt
+    e, _ = wnoj.residual(r0[None], w0[None], a0[None], r_dt[None], w_dt[None], a0[None], dt)
+    assert np.linalg.norm(e[0, 3:6]) < 1e-4
+
+
+def test_fold_subset_parsing_rejects_invalid_entries(tmp_path):
+    import run_task3_wnoj as cli
+    bad_unknown = tmp_path / 'unknown.json'
+    bad_unknown.write_text(json.dumps({'folds': {'0': {'2': ['LowerBack', 'NotASensor']}}}))
+    with pytest.raises(ValueError, match='unknown sensors'):
+        cli.parse_fold_subsets(bad_unknown, 0, [2])
+    bad_dup = tmp_path / 'dup.json'
+    bad_dup.write_text(json.dumps({'folds': {'0': {'2': ['LowerBack', 'LowerBack']}}}))
+    with pytest.raises(ValueError, match='duplicate'):
+        cli.parse_fold_subsets(bad_dup, 0, [2])
+    bad_len = tmp_path / 'len.json'
+    bad_len.write_text(json.dumps({'folds': {'0': {'3': ['LowerBack', 'Head']}}}))
+    with pytest.raises(ValueError, match='has 2 sensors'):
+        cli.parse_fold_subsets(bad_len, 0, [3])

@@ -10,12 +10,14 @@ Anderson & Barfoot (2015) and Tang, Yoon & Barfoot (2019).
 Local state gamma = (xi, xi_dot, xi_ddot):
   gamma_k(t_k)     = (0, w_k, a_k)
   gamma_k(t_{k+1}) ~= (xi, w_{k+1} - xi x w_{k+1} / 2, a_{k+1} - xi x a_{k+1} / 2)
-with xi = Log(R_{k+1} R_k^T). xi_dot = J_l^{-1}(xi) w is used to first order,
-J_l^{-1}(xi) ~= I + hat(xi)/2, and likewise for the acceleration (the
-quadratic Coriolis-like term is dropped). This is a first-order local
-approximation, exact as the frame interval goes to zero (60 Hz here). The
-analytic Jacobians below are exact derivatives of this residual and are
-checked against finite differences.
+with xi = Log(R_{k+1} R_k^T). For R(t) = Exp(xi(t)) R_k and world angular
+velocity dot(R) R^T = [w]_x, we have w = J_l(xi) xi_dot, hence
+xi_dot = J_l^{-1}(xi) w where J_l^{-1}(xi) = J_r^{-1}(-xi) = I - hat(xi)/2 + O(||xi||^2),
+so xi_dot ~= w - xi x w / 2 (and likewise for acceleration, dropping the
+quadratic Coriolis-like term). This is a first-order local approximation,
+exact as the frame interval goes to zero (60 Hz here). The analytic Jacobians
+below are exact derivatives of this residual and are checked against both
+finite differences and direct ODE integration of dot(R) = [w(t)]_x R.
 
 Residual e_k = gamma_k(t_{k+1}) - Phi(dt) gamma_k(t_k), whitened by
 L^{-1} with Q(dt) = L L^T.
