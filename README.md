@@ -17,18 +17,18 @@
 |---|---|
 | 数据与P0诊断 | 已完成；自由加速度数值单位支持为g |
 | 第一题 V4 | 8/8组、48/48折完成；48个模型与预测保留云端，进入错误分析与论文图表整理 |
-| 第二题与第三题 | 代码就绪，尚待全量实测；按第一题验收、传感器精简、留出重建顺序接续 |
-| 第四题 | 已有离线可观性与敏感性计算，待论文整合 |
+| 第二题与第三题 | 第二题正在云端运行中；第三题精修版（WNOJ `none`/`g` 夹心对比 + RTX 4090 6D BiGRU `T3-M4/M5`）、Task 1/2 论文图表脚本与接续总控已全部就绪并合入 `main` |
+| 第四题 | 离线可观性与敏感性已完成；新增 P0 静立三轴噪声下界标定脚本 `calibrate_noise_from_p0.py` 待云端接续运行并汇入论文 |
 | 存储清理 | 已删除解压后的dataset.zip，释放约8.79 GB；31个CSV、30人缓存及模型保留，剩余约15.07 GiB |
 
-仓库当前为公开状态。本次新发布仅包含汇总指标、分类结果、各折汇总、参数和复现报告；逐人明细、原始信号、逐窗口预测与模型保留云端。详见 [发布清单](results/task1_v4/run_20261128_full/publication_manifest.json)。今日安排见 [实验计划](docs/08_2026-11-28_experiment_plan_and_progress.md)，后续操作见 [交接手册](docs/07_v4_engineering_spec_and_cloud_handoff.md)。
+仓库当前为公开状态。本次新发布仅包含汇总指标、分类结果、各折汇总、参数和复现报告；逐人明细、原始信号、逐窗口预测与模型保留云端。详见 [发布清单](results/task1_v4/run_20261128_full/publication_manifest.json)。今日安排见 [实验计划](docs/08_2026-11-28_experiment_plan_and_progress.md)，Task 2 完成后的接续命令见 [交接手册](docs/07_v4_engineering_spec_and_cloud_handoff.md) 第五节。
 
-- **代码交付状态（队友交接记录：Linux 全仓82/82检查、全链路冒烟与断点续跑通过；本机云端另复核第一题相关14项检查通过）**：
-  - **P0 只读实测诊断**：`scripts/diagnostics/`（7/7 通过）
+- **代码交付状态（Linux 全仓 101 通过 / 1 CUDA 跳过 + GPU 单独实测通过；Post-Task-2 接续与原有双套 `--smoke` 首跑 / 断点续跑 / `--overwrite` 均通过）**：
+  - **P0 只读实测诊断**：`scripts/diagnostics/`（7/7 通过；30 人实测完成，`verdict="g"`）
   - **Task 1 & Task 2 V4 特征族、Sticky HMM 与 6 折帕累托**：`src/v4_features/`、`scripts/task1_v4/`、`scripts/task2_v4/`（14/14 通过，含真实 `pyarrow` + `lightgbm` 端到端测试）
-  - **Task 3 $SO(3)$ 李群 WNOJ 平滑器与留出评估器**：`src/task3/`、`scripts/task3/`、`results/task3_offline_v1/`（24/24 通过，含 ODE 运动学一致性、双层加速度禁用门控与 Stage 3→4 逐折接口测试）
-  - **Task 4 脊柱可观性离线包、敏感性扫描与 3 张论文图**：`src/spine/` + [results/spine_offline_v1/summary.md](results/spine_offline_v1/summary.md)（37/37 通过）
-  - **云端一键总控与打包器**：`scripts/run_cloud_all_v4.sh`、`scripts/package_cloud_v4_bundle.py`
+  - **Task 3 $SO(3)$ 李群 WNOJ 与 6D BiGRU 重建**：`src/task3/`、`scripts/task3/`、`src/task3_dl/`、`scripts/task3_dl/train_bigru_6d.py`、`results/task3_offline_v1/`（WNOJ `30/30` 通过，含 `T3-M3` 夹心 `g` 加速度因子与 `T3-M5` 共享接口；BiGRU Linux CPU+`pyarrow` `7/8` 通过，CUDA 与 `T3-M4/M5` CLI 已在 RTX 5060 GPU 通过）
+  - **Task 4 脊柱可观性与 P0 静立噪声标定**：`src/spine/`、`scripts/spine/calibrate_noise_from_p0.py` + [results/spine_offline_v1/summary.md](results/spine_offline_v1/summary.md)（37 + 3 = 40/40 通过）
+  - **Task 1/2 论文图表与云端接续总控**：`scripts/analysis/build_task12_paper_figures.py`（3/3 通过 + 已在 Task 1 实测结果上出图核验）、`scripts/run_cloud_task3_task4_v4.sh`、`scripts/run_cloud_all_v4.sh`、`scripts/package_cloud_v4_bundle.py`
 - **Task 1 LightGBM 六折探索性基线（2026-11-27）** 保持冻结作为对照：
 
 | 基线测试指标（`lightgbm_baseline_v1`） | 结果 |
@@ -41,7 +41,7 @@
 
 入口：[完整结果报告](docs/09_task1_v4_full_validation_report.md) · [今日实验安排](docs/08_2026-11-28_experiment_plan_and_progress.md) · [第一题运行快照](results/task1_v4/run_20261128_snapshot/README.md) · [V4.0 云端交接手册](docs/07_v4_engineering_spec_and_cloud_handoff.md) · [P0 诊断说明](scripts/diagnostics/README.md) · [Task 4 脊柱可观性结果](results/spine_offline_v1/summary.md) · [Task 1 基线说明](docs/06_task1_lightgbm_baseline.md) · [数据预处理快照](docs/05_independent_preprocessing_progress.md)
 
-> **加速度诊断已完成**：P0 内部物理一致性检查支持已经去重力的自由加速度、数值单位为 `g`；这不是外部仪器校准。原缓存保持原值，需要 SI 单位时在派生计算中乘 `9.80665`，不重复去重力。第三题当前交接口径仍为 `--accel-unit none`，精修版另行验收。
+> **加速度诊断已完成**：P0 内部物理一致性检查支持已经去重力的自由加速度、数值单位为 `g`；这不是外部仪器校准。原缓存保持原值，需要 SI 单位时在派生计算中乘 `9.80665`，不重复去重力。第三题同时保留无加速度主基线 `T3-M2`（`--accel-unit none`）与夹心节段局部鲁棒加速度对比版 `T3-M3`（`--accel-unit g`），并加入 6D Sensor-Dropout BiGRU 对比版（`T3-M4/T3-M5`）。
 
 ## 核心研究主线（V3.0）
 **人体运动的多尺度可观测性与最小传感器设计**（$\mathrm{Measurement} \to \mathrm{Representation} \to \mathrm{Observability} \to \mathrm{Inference}$）：

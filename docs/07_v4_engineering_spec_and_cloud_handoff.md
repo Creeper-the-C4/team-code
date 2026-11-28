@@ -6,16 +6,12 @@
 
 > **2026年11月28日接续状态**：第一题V4已于12:37:49完成8组、48折训练并通过脚本核验。详见 [完整结果报告](09_task1_v4_full_validation_report.md) 与 [当日安排](08_2026-11-28_experiment_plan_and_progress.md)。第一题本轮进程已退出，完整结果保留在 `/root/autodl-tmp/C_Problem/results/task1_v4_20261128`。
 >
-> 本次使用独立入口运行第一题。它与下方整套总控的状态文件、结果目录和锁不同，整套总控不会自动识别本轮所有阶段已完成。后续优先选择第二、三题的独立入口，避免重复计算；跨入口恢复须先核对版本与配置。
+> 若云端正在执行第二题（Task 2），**请保持现有 Task 2 进程继续跑完，切勿中途打断**；本次新增的 Task 3 精修对照（`T3-M3` 夹心 `g` 因子 + `T3-M4/M5` BiGRU 6D）、Task 4 P0 静立噪声标定与 Task 1/2 论文出图通过独立入口 `scripts/run_cloud_task3_task4_v4.sh` 无侵入接续（状态文件与锁独立）。
 >
-> P0内部物理检查支持自由加速度数值单位为g；第三题本版仍为 `--accel-unit none`，加速度因子的启用需完成物理模型核验。已删除 `/root/autodl-tmp/dataset.zip`，原始解压CSV、处理缓存与模型保留。
-
-> **极速执行总览（全部代码已合入 `main` 并通过 Linux 82/82 单测与全链路冒烟，直接按顺序操作即可）**
-> 1. **拉取最新 `main` 并核对环境**：执行 `git pull --ff-only origin main` 并记录 `git rev-parse HEAD`。
-> 2. **一键启动全量无人值守运行**：进入 `tmux new -s v4_run` 并执行 **`bash scripts/run_cloud_all_v4.sh`**，自动依次完成 **Stage 0（P0 数据检查，3–10 min）→ Stage 1（2s/4s 特征缓存）→ Stage 2（Task 1 全消融 + Sticky HMM）→ Stage 3（Task 2 17 传感器帕累托，含 `ranking_prefix` 对照与 exact wrapper 主线）→ Stage 4（Task 3 WNOJ 留出重建，强制 `--accel-unit none`）→ Stage 6（自动打包 `results/cloud_v4_final_bundle.zip`）**。
->    - 如只想先单跑第一步 P0 数据检查，仍可直接运行下方第一节的 3 条命令并回传 `results/p0_diagnostics/`。
-> 3. **只需回报两次**：① 刚启动时发回 `git rev-parse HEAD` 与开头若干行启动日志；② 全部跑完后回传 `results/cloud_v4_final_bundle.zip`（只含小体积表格/图/日志，不传大文件）。
-> 4. **后续接力**：拿到本轮结果并完成 P0 加速度单位裁决与验收后，再推送带物理约束精修版及 4090 GPU 深度对照脚本，做最后一轮收官运行。
+> **极速执行总览（当前 `main` 全库已在 Linux 下通过 101/102 单测（含真实 `pyarrow` + CPU `torch`，唯一跳过项为无卡环境的 CUDA 用例），该 CUDA 用例与 `T3-M4/M5` CLI 已在 RTX 5060 GPU 端到端实测通过；Task 3/4 接续总控与原有总控双套 `--smoke` 含首跑 / 断点续跑 / `--overwrite` 重算均已通过）**
+> 1. **Task 2 仍在跑时不要动工作区**：待 Task 2 正常结束并生成 `F1H_backward/per_fold_selected_subsets.json` 后，再拉取最新 `main`：`git pull --ff-only origin main`。
+> 2. **一键启动 Task 3 / Task 4 / 出图联合流水线**：直接执行第五节 `bash scripts/run_cloud_task3_task4_v4.sh --task2-root <Task2目录> --workers 8`（自动依次执行 Task 4 静态噪声标定 → Task 3 WNOJ `none` → Task 3 WNOJ `g` → RTX 4090 BiGRU 6D + `T3-M5` 后平滑 → Task 1/2 英文论文图 → 轻量打包 `cloud_task34_bundle.zip`）。
+> 3. **只需提交小体积汇总产物**：`.gitignore` 已精确放行公共汇总 `.csv/.json/.md` 并自动屏蔽 `per_subject_metrics.csv`、`_parts/`、`checkpoints/` 与大文件。
 
 ---
 
@@ -135,17 +131,17 @@ git push origin main
 
 ---
 
-## 四、模块清单（已集成至统一分支待联合复验）
+## 四、模块清单（已通过 Linux 101/102 + GPU 联合复验）
 
-| 模块 | 路径 | 功能边界 | 云端执行时机 |
+| 模块 | 路径 | 功能与验证状态 | 云端执行时机 |
 | :--- | :--- | :--- | :--- |
-| P0 实测诊断脚本 | `scripts/diagnostics/` + `tests/test_diag_p0.py` | **已完成 30 人实测**（`verdict="g"`） | 已有 `results/p0_diagnostics/`，无需重跑 |
-| Task 1/2 V4 特征族、Sticky HMM 与 6 折帕累托脚本 | `src/v4_features/`、`scripts/task1_v4/`、`scripts/task2_v4/` + `tests/test_wp1_v4_features_and_masking.py` | Task 1 48 折已归档；Task 2 输出 `per_fold_selected_subsets.json` | 保持云端当前运行中的 Task 2 跑完即可 |
-| Task 3 $SO(3)$ WNOJ 平滑器（`T3-M0..M3` + `T3-M5` 共享接口） | `src/task3/`、`scripts/task3/run_task3_wnoj.py`、`results/task3_offline_v1/` + `tests/test_task3_wnoj.py` | 支持 `none` 主线与 `g` 夹心节段对比 | `run_cloud_task3_task4_v4.sh` 自动串联执行 |
-| Task 3 6D Sensor-Dropout BiGRU（`T3-M4/M5`） | `src/task3_dl/`、`scripts/task3_dl/train_bigru_6d.py` + `tests/test_task3_bigru_6d.py` | RTX 4090 AMP 训练 + `--apply-wnoj-post` 后平滑 | `run_cloud_task3_task4_v4.sh` 自动紧接 WNOJ 在 GPU 执行 |
-| Task 4 脊柱可观性与 P0 静立噪声标定 | `src/spine/`、`scripts/spine/calibrate_noise_from_p0.py`、`results/spine_offline_v1/` + `tests/test_spine*.py` | 三轴鲁棒静态下界标定与 `M3` 慢模态补充计数 | `run_cloud_task3_task4_v4.sh` 第一阶段自动执行（1–3 分钟） |
-| Task 1/2 论文图表与分层汇总 | `scripts/analysis/build_task12_paper_figures.py` + `tests/test_paper_analysis_scripts.py` | 英文坐标防乱码，队列/纯度/试次分位严格合规脱敏 | `run_cloud_task3_task4_v4.sh` 末尾自动生成至 `results/task12_paper_figures/` |
-| Task 3/4 云端接续总控与打包器 | `scripts/run_cloud_task3_task4_v4.sh`、`scripts/package_cloud_v4_bundle.py` | 无侵入接续运行中的 Task 2；自带 `flock` 与断点续跑 | Task 2 完成后 `git pull` 一键运行 |
+| P0 实测诊断脚本 | `scripts/diagnostics/` + `tests/test_diag_p0.py` | **7/7 通过**；已完成 30 人实测（`verdict="g"`） | 已有 `results/p0_diagnostics/`，无需重跑 |
+| Task 1/2 V4 特征族、Sticky HMM 与 6 折帕累托脚本 | `src/v4_features/`、`scripts/task1_v4/`、`scripts/task2_v4/` + `tests/test_wp1_v4_features_and_masking.py` | **14/14 通过**（真实 `pyarrow` + `lightgbm`）；Task 1 48 折已归档 | 保持云端当前运行中的 Task 2 跑完即可 |
+| Task 3 $SO(3)$ WNOJ 平滑器（`T3-M0..M3` + `T3-M5` 共享接口） | `src/task3/`、`scripts/task3/run_task3_wnoj.py`、`results/task3_offline_v1/` + `tests/test_task3_wnoj.py` | **30/30 通过**；支持 `none` 主线与 `g` 夹心节段对比 | `run_cloud_task3_task4_v4.sh` 自动串联执行 |
+| Task 3 6D Sensor-Dropout BiGRU（`T3-M4/M5`） | `src/task3_dl/`、`scripts/task3_dl/train_bigru_6d.py` + `tests/test_task3_bigru_6d.py` | **Linux CPU+`pyarrow` 7/8 通过（CUDA 项跳过），CUDA 烟测与 `T3-M4/M5` CLI 已在 RTX 5060 GPU 通过** | `run_cloud_task3_task4_v4.sh` 自动紧接 WNOJ 在 GPU 执行 |
+| Task 4 脊柱可观性与 P0 静立噪声标定 | `src/spine/`、`scripts/spine/calibrate_noise_from_p0.py`、`results/spine_offline_v1/` + `tests/test_spine*.py` | **37 + 3 = 40/40 通过**；静态下界标定与 `M3` 慢模态补充计数 | `run_cloud_task3_task4_v4.sh` 第一阶段自动执行（1–3 分钟） |
+| Task 1/2 论文图表与分层汇总 | `scripts/analysis/build_task12_paper_figures.py` + `tests/test_paper_analysis_scripts.py` | **3/3 通过** + 已实测 Task 1 8 组真实数据出图 | `run_cloud_task3_task4_v4.sh` 末尾自动生成至 `results/task12_paper_figures/` |
+| Task 3/4 云端接续总控与打包器 | `scripts/run_cloud_task3_task4_v4.sh`、`scripts/package_cloud_v4_bundle.py` | **新旧双套 `--smoke` 通过**（首跑 / `[RESUME_SKIP]` 续跑 / `--overwrite` 重算均退出码 0，ZIP 无 `_parts`） | Task 2 完成后 `git pull` 一键运行 |
 
 ---
 
