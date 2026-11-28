@@ -1,0 +1,44 @@
+{
+  "base_commit": "46bc8a1056461a3980a75d51869c4a676d5dbfcc",
+  "github_main_at_launch": "17bb054bcefa691128d0ca3df80b3a923bcccd82",
+  "backend": "cuda",
+  "gpu": "NVIDIA RTX 4090",
+  "lightgbm": "4.6.0",
+  "n_estimators": 80,
+  "splits_sha256": "486b224b7952f4831b2ea5a9ef34851ee1421e67ee8df2d18bc98efddc17b021",
+  "feature_cache": "/root/autodl-tmp/C_Problem/data/processed/v4_features_cache",
+  "cuda_library_sha256": "83058f313ed89b60afc51ce49b30d9fd4d02ac1126a5ae76d2ffda18256d2f60",
+  "launcher_sha256": "508330f03950afacf1a2edc77e5ffad6592b04e05c975bee34f91bffbc126684",
+  "patched_source_sha256": {
+    "scripts/task2_v4/run_sensor_selection.py": "41f7268c7bcb782e67265d59a820a08b14855a24c8abf7b7507f0e72658c0a15",
+    "src/v4_features/workflow.py": "16b5bb4d0fc4661ddf799a9d318f894fa84a486e75f07409124f55d46ba973cc"
+  },
+  "n_folds": 6,
+  "expected_oof_windows_per_k": 220702,
+  "experiments": [
+    {
+      "name": "F1H_ranking_prefix",
+      "family": "F1H",
+      "strategy": "ranking_prefix",
+      "fits_per_fold": 17
+    },
+    {
+      "name": "F1H_backward",
+      "family": "F1H",
+      "strategy": "backward_greedy",
+      "fits_per_fold": 153
+    },
+    {
+      "name": "F3_backward",
+      "family": "F3",
+      "strategy": "backward_greedy",
+      "fits_per_fold": 153
+    },
+    {
+      "name": "F1H_forward",
+      "family": "F1H",
+      "strategy": "forward_greedy",
+      "fits_per_fold": 153
+    }
+  ]
+}

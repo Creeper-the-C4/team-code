@@ -6,10 +6,10 @@
 
 > **2026年11月28日接续状态**：第一题V4已于12:37:49完成8组、48折训练并通过脚本核验。详见 [完整结果报告](09_task1_v4_full_validation_report.md) 与 [当日安排](08_2026-11-28_experiment_plan_and_progress.md)。第一题本轮进程已退出，完整结果保留在 `/root/autodl-tmp/C_Problem/results/task1_v4_20261128`。
 >
-> 若云端正在执行第二题（Task 2），**请保持现有 Task 2 进程继续跑完，切勿中途打断**；本次新增的 Task 3 精修对照（`T3-M3` 夹心 `g` 因子 + `T3-M4/M5` BiGRU 6D）、Task 4 P0 静立噪声标定与 Task 1/2 论文出图通过独立入口 `scripts/run_cloud_task3_task4_v4.sh` 无侵入接续（状态文件与锁独立）。
+> **第二题已完成**。云端完整目录为 `/root/autodl-tmp/C_Problem/results/task2_v4_20261128`。各折布局和运行结果见 [第二题报告](10_task2_v4_sensor_selection_report.md) 与 [主实验布局](../results/task2_v4/run_20261128_full/F1H_backward/per_fold_selected_subsets.json)。第三、四题从下方独立入口接续。
 >
 > **极速执行总览（当前 `main` 全库已在 Linux 下通过 101/102 单测（含真实 `pyarrow` + CPU `torch`，唯一跳过项为无卡环境的 CUDA 用例），该 CUDA 用例与 `T3-M4/M5` CLI 已在 RTX 5060 GPU 端到端实测通过；Task 3/4 接续总控与原有总控双套 `--smoke` 含首跑 / 断点续跑 / `--overwrite` 重算均已通过）**
-> 1. **Task 2 仍在跑时不要动工作区**：待 Task 2 正常结束并生成 `F1H_backward/per_fold_selected_subsets.json` 后，再拉取最新 `main`：`git pull --ff-only origin main`。
+> 1. **核对 Task 2 结果和源代码**：确认主实验的 `F1H_backward/per_fold_selected_subsets.json` 可读，再同步最新 `main`。
 > 2. **一键启动 Task 3 / Task 4 / 出图联合流水线**：直接执行第五节 `bash scripts/run_cloud_task3_task4_v4.sh --task2-root <Task2目录> --workers 8`（自动依次执行 Task 4 静态噪声标定 → Task 3 WNOJ `none` → Task 3 WNOJ `g` → RTX 4090 BiGRU 6D + `T3-M5` 后平滑 → Task 1/2 英文论文图 → 轻量打包 `cloud_task34_bundle.zip`）。
 > 3. **只需提交小体积汇总产物**：`.gitignore` 已精确放行公共汇总 `.csv/.json/.md` 并自动屏蔽 `per_subject_metrics.csv`、`_parts/`、`checkpoints/` 与大文件。
 

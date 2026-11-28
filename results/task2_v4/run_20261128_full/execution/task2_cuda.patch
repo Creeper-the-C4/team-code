@@ -1,0 +1,121 @@
+diff --git a/scripts/task2_v4/run_sensor_selection.py b/scripts/task2_v4/run_sensor_selection.py
+index 7a05762..effde6d 100644
+--- a/scripts/task2_v4/run_sensor_selection.py
++++ b/scripts/task2_v4/run_sensor_selection.py
+@@ -24,17 +24,23 @@ FORWARD = "forward_greedy"
+ RANKING = "ranking_prefix"
+ 
+ 
+-def fit_layout(train, train_meta, validation, validation_meta, family, subset, n_estimators, fast_smoke):
++def fit_layout(train, train_meta, validation, validation_meta, family, subset, n_estimators, fast_smoke,
++               device_type="cpu"):
+     columns = feature_columns(family, subset)
+     val_matrix = validation[:, columns]
+-    model = fit_classifier(train[:, columns], train_meta, val_matrix, validation_meta, n_estimators, fast_smoke)
++    device_options = {} if device_type == "cpu" else {"device_type": device_type}
++    started = perf_counter()
++    print(f"FIT_START k={len(subset)}", flush=True)
++    model = fit_classifier(train[:, columns], train_meta, val_matrix, validation_meta, n_estimators,
++                           fast_smoke, **device_options)
+     predicted = predict_probabilities(model, val_matrix).argmax(axis=1)
+     scores, _, _ = score_predictions(validation_meta, predicted)
++    print(f"FIT_DONE k={len(subset)} seconds={perf_counter() - started:.3f}", flush=True)
+     return columns, model, (scores["subject_equal_macro_f1_13"], scores["pooled_macro_f1_13"])
+ 
+ 
+ def validation_path(train, train_meta, validation, validation_meta, family, strategy, sensors,
+-                    n_estimators, fast_smoke):
++                    n_estimators, fast_smoke, device_type="cpu"):
+     """Learn all best layouts without access to the outer test fold."""
+     sensors = tuple(sensors)
+     fixed = sensors if strategy == BACKWARD else ()
+@@ -43,7 +49,7 @@ def validation_path(train, train_meta, validation, validation_meta, family, stra
+     if strategy == RANKING:
+         started = perf_counter()
+         cols, model, score = fit_layout(train, train_meta, validation, validation_meta, family,
+-                                        sensors, n_estimators, fast_smoke)
++                                        sensors, n_estimators, fast_smoke, device_type)
+         deps = feature_dependencies(family, sensors)
+         gains = model.booster_.feature_importance(importance_type="gain", iteration=model.best_iteration_)
+         sensor_gain = dict.fromkeys(sensors, 0.0)
+@@ -57,7 +63,7 @@ def validation_path(train, train_meta, validation, validation_meta, family, stra
+             started = perf_counter()
+             subset = tuple(s for s in sensors if s in ranking[:size])
+             cols, model, score = fit_layout(train, train_meta, validation, validation_meta, family,
+-                                            subset, n_estimators, fast_smoke)
++                                            subset, n_estimators, fast_smoke, device_type)
+             paths[size] = (subset, cols, model, score[0])
+             timings[size] = perf_counter() - started
+         return paths, timings
+@@ -72,7 +78,7 @@ def validation_path(train, train_meta, validation, validation_meta, family, stra
+         winner = None
+         for subset in candidates:
+             columns, model, compare = fit_layout(train, train_meta, validation, validation_meta, family,
+-                                                 subset, n_estimators, fast_smoke)
++                                                 subset, n_estimators, fast_smoke, device_type)
+             if winner is None or compare > winner[0]:
+                 winner = (compare, subset, columns, model)
+         score, fixed, columns, model = winner
+@@ -103,7 +109,7 @@ def run_fold(args, fold, directory, run_id, sensors):
+     train, train_meta = get_data("train")
+     validation, validation_meta = get_data("validation")
+     paths, timings = validation_path(train, train_meta, validation, validation_meta, args.family, args.strategy,
+-                                     sensors, args.n_estimators, args.fast_smoke)
++                                     sensors, args.n_estimators, args.fast_smoke, args.device_type)
+     del train, validation
+     selections = {str(size): list(item[0]) for size, item in paths.items()}
+     write_json(path_file, selections)
+@@ -238,6 +244,7 @@ def main(argv=None):
+     parser.add_argument("--window-sec", type=int, choices=(2, 4), default=2)
+     parser.add_argument("--out", type=Path, required=True)
+     parser.add_argument("--n-estimators", type=int)
++    parser.add_argument("--device-type", choices=("cpu", "cuda"), default="cpu")
+     parser.add_argument("--fast-smoke", action="store_true")
+     parser.add_argument("--sensors", nargs="+", choices=SENSORS,
+                         help="Restrict the starting layout for a smoke test")
+@@ -257,6 +264,8 @@ def main(argv=None):
+         "window_seconds": args.window_sec, "fast_smoke": args.fast_smoke, "sensors": sensors,
+         "n_estimators": args.n_estimators, "report_version": 2,
+     }
++    if args.device_type != "cpu":
++        config["device_type"] = args.device_type
+     run_id = begin_run(args.out, config, args.overwrite)
+     if run_id is None:
+         return
+@@ -264,6 +273,7 @@ def main(argv=None):
+     predictions = []
+     details = {}
+     for fold in folds:
++        print(f"FOLD_START {fold['fold']}", flush=True)
+         layout, result, info = run_fold(args, fold, args.out / f"fold_{fold['fold']}", run_id, sensors)
+         selections[str(fold["fold"])] = layout
+         details[str(fold["fold"])] = info
+diff --git a/src/v4_features/workflow.py b/src/v4_features/workflow.py
+index c5525c7..e788d94 100644
+--- a/src/v4_features/workflow.py
++++ b/src/v4_features/workflow.py
+@@ -263,7 +263,8 @@ def class_metrics(cm):
+                          "support": cm.sum(axis=1), "precision": precision, "recall": recall, "f1": _f1(cm)})
+ 
+ 
+-def fit_classifier(train, train_meta, validation, validation_meta, n_estimators, fast_smoke=False):
++def fit_classifier(train, train_meta, validation, validation_meta, n_estimators, fast_smoke=False,
++                   *, device_type="cpu"):
+     import lightgbm as lgb
+ 
+     y = train_meta["majority_label"].to_numpy(dtype=np.int64)
+@@ -273,11 +274,13 @@ def fit_classifier(train, train_meta, validation, validation_meta, n_estimators,
+         raise ValueError("Training must cover all validation classes")
+     if not fast_smoke and len(classes) != N_CLASSES:
+         raise ValueError("Formal training must contain all 13 classes")
++    device_options = ({"force_col_wise": True, "deterministic": True} if device_type == "cpu"
++                      else {"device_type": device_type, "gpu_device_id": 0})
+     model = lgb.LGBMClassifier(
+         n_estimators=n_estimators, learning_rate=0.08, num_leaves=15 if fast_smoke else 31,
+         max_bin=63, min_child_samples=2 if fast_smoke else 50,
+         n_jobs=1 if fast_smoke else min(12, os.cpu_count() or 1),
+-        random_state=42, verbosity=-1, metric="None", force_col_wise=True, deterministic=True,
++        random_state=42, verbosity=-1, metric="None", **device_options,
+     )
+ 
+     def validation_metric(encoded_labels, probability):

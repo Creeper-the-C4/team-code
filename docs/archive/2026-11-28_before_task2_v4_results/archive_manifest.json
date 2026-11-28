@@ -1,0 +1,20 @@
+{
+  "base_commit": "d0532f25debab3a53fb7f709c6e17b3fd40c463f",
+  "files": [
+    {
+      "original": "README.md",
+      "archive": "README.md",
+      "sha256": "8863ba3f26344c1587d54ece141aa43962f016a374e49b3fb022a26fd3b96638"
+    },
+    {
+      "original": "docs/07_v4_engineering_spec_and_cloud_handoff.md",
+      "archive": "docs/07_v4_engineering_spec_and_cloud_handoff.md",
+      "sha256": "010dc1f85b5c66303bbda3dc935b7f831552721ed48cb6a3739481bb7bc362c9"
+    },
+    {
+      "original": "docs/08_2026-11-28_experiment_plan_and_progress.md",
+      "archive": "docs/08_2026-11-28_experiment_plan_and_progress.md",
+      "sha256": "d7f1009157a10c4779ee89e28020b545503ff580443376cc96e313e63eb65414"
+    }
+  ]
+}
