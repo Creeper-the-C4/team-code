@@ -136,3 +136,42 @@ The tests cover:
   Gauss–Newton converges only linearly. They get up to 30 iterations, and the largest final
   update is reported (about 1e-4 rad on the synthetic fixture, i.e. below 0.01°).
 - **Stage B:** the 6D Sensor-Dropout BiGRU is a separate optional step.
+
+## Models T3-M0 to T3-M3 and the external-prior interface (P0-calibrated update)
+
+| ID | Method | Acceleration |
+|---|---|---|
+| T3-M0 | `copy_parent`: the parent's orientation | no |
+| T3-M1 | `mean_relative`: parent orientation × training mean relative rotation | no |
+| T3-M2 | `wnoj`: SO(3) WNOJ with joint factors from observed or rebuilt neighbours | no (`--accel-unit none`) |
+| T3-M3 | `wnoj_acc`: T3-M2 plus a local robust link-acceleration factor | `--accel-unit g` only |
+
+These Task 3 IDs are unrelated to the Task 4 spine models M1–M3.
+
+**How T3-M3 works** (`src/task3/accel_factor.py`):
+
+- **Where it applies.** Only on a withheld segment w with an observed parent p *and* an
+  observed child c. Otherwise the factor is skipped, and T3-M3 equals T3-M2.
+- **Residual.** `e_a = da_obs − (G_w) R_w b_w`, with `G = [α]× + [ω]×²`. The observed link
+  acceleration is `da_obs = a(J_wc) − a(J_pw)`. Joint accelerations come from the parent and
+  child sensors through their WNOJ-smoothed (ω, α) and half-bone lever arms; this assumes
+  mid-segment sensors.
+- **Units.** Accelerations are the dataset's gravity-compensated free acceleration in g
+  (P0 verdict), converted with `ACCEL_G_TO_SI = 9.80665`. Gravity is never removed again.
+- **Robustness.** Impact frames are masked (|da_obs| > 30 m/s² or parent/child |α| >
+  150 rad/s²); the remaining frames use IRLS Huber weights (k = 1.345). The analytic
+  Jacobian is checked to < 1e-8.
+- **Tuning.** `sigma_acc` is chosen per fold on validation participants from {1, 2, 4} m/s².
+- **Reporting.** `summary.json` echoes `accel_schema`, `accel_factor_registered: true` and
+  `model_ids`, and T3-M2 and T3-M3 are reported side by side.
+- **Default mode.** With `--accel-unit none`, accelerometer channels are still never read:
+  NaN in every Acc channel leaves the output bitwise identical.
+
+**Caveat.** P0 T3 fitted knee lever arms of only about 7 cm, against about 30 cm expected
+from anatomy, so the half-bone lever-arm assumption is uncertain. Report T3-M3 against
+T3-M2 as measured, including "no gain" if that is the result.
+
+**External prior (T3-M5).** `withheld_eval.smooth_with_external_prior(r_prior_dict,
+gyro_obs_or_none, dt, qc, sigma_prior_deg=4.0)` post-smooths per-frame rotation predictions
+(for example from a BiGRU) under the WNOJ prior. It can optionally add gyro factors, but only
+for sensors whose gyro is observed.

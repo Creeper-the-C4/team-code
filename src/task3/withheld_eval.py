@@ -24,12 +24,22 @@ from dataclasses import dataclass
 import numpy as np
 
 from .kinematic_tree import CHILDREN, END_EFFECTORS, PARENT, forward_kinematics, tree_order
+from .accel_factor import AccelFactor, link_target
 from .smoother import OrientationFactor, SegmentProblem, initial_rates, smooth
 from .so3_lie import chordal_mean, geodesic_deg, log_so3, quat_xyzw_to_rot
 
 FS = 60.0
 EDGES = [(p, c) for c, p in PARENT.items() if p is not None]
 METHODS = ('wnoj', 'mean_relative', 'copy_parent')
+ACCEL_METHOD = 'wnoj_acc'
+# Task 3 model identifiers (distinct from the Task 4 spine models M1-M3)
+MODEL_IDS = {'copy_parent': 'T3-M0', 'mean_relative': 'T3-M1', 'wnoj': 'T3-M2',
+             'wnoj_acc': 'T3-M3'}
+
+
+def methods_for(params):
+    """T3-M0..M2 always; T3-M3 only when acceleration is enabled (accel_unit='g')."""
+    return METHODS + ((ACCEL_METHOD,) if params.accel_unit == 'g' else ())
 
 
 @dataclass
@@ -41,6 +51,9 @@ class Params:
     factors: str = 'both'        # 'gyro' | 'orientation' | 'both' for observed segments
     max_iter: int = 12
     max_iter_withheld: int = 30  # joint-factor problems converge linearly (large residuals)
+    accel_unit: str = 'none'     # 'g' enables T3-M3 (P0 verdict); 'none'/'disabled' never reads Acc
+    sigma_acc: float = 2.0       # m/s^2, link-acceleration factor scale (chosen on validation)
+    huber_k: float = 1.345
 
 
 def rotations(values, names):
@@ -87,8 +100,8 @@ def smooth_observed(values, names, sensors, params, dt=1 / FS):
             w0 = gyro
         else:
             r0, w0 = r_meas, initial_rates(r_meas, dt)[0]
-        r, w, _, _ = smooth(prob, r0, w0, np.gradient(w0, dt, axis=0), max_iter=params.max_iter)
-        out[s] = (r, w)
+        r, w, a, _ = smooth(prob, r0, w0, np.gradient(w0, dt, axis=0), max_iter=params.max_iter)
+        out[s] = (r, w, a)                # rotation, world rate, angular acceleration
     return out
 
 
@@ -127,10 +140,34 @@ def rebuild_order(withheld, observed):
     return order
 
 
-def reconstruct(smoothed, observed, withheld, stats, params, dt=1 / FS):
-    """Rebuild withheld segments. Returns method -> sensor -> (R, w) for withheld sensors."""
-    out = {m: {} for m in METHODS}
-    for m in METHODS:
+def _accel_factor(w, observed, smoothed, accel):
+    """T3-M3 link factor for a sandwiched withheld segment, or None (skipped safely)."""
+    if accel is None or accel.get('bones') is None:
+        return None
+    p = PARENT[w]
+    kids = [c for c in CHILDREN[w] if c in observed and c in smoothed and c in accel['acc']]
+    if p is None or p not in observed or p not in smoothed or p not in accel['acc'] or not kids:
+        return None
+    bones = accel['bones']
+    c = kids[0]
+    if any(k not in bones for k in (p, w, c)):
+        return None
+    rp, wp, ap = smoothed[p]
+    rc, wc, ac = smoothed[c]
+    target, ok = link_target(accel['acc'][p], accel['acc'][c], rp, wp, ap, rc, wc, ac,
+                             bones[p], bones[c])
+    return AccelFactor(target, bones[w], accel['sigma'], accel['huber_k'], ok)
+
+
+def reconstruct(smoothed, observed, withheld, stats, params, dt=1 / FS, accel=None):
+    """Rebuild withheld segments. Returns method -> sensor -> (R, w) for withheld sensors.
+
+    accel (T3-M3 only): {'acc': observed sensor -> raw (T,3) g, 'bones': sensor-frame bone
+    vectors, 'sigma': m/s^2, 'huber_k'}.
+    """
+    methods = methods_for(params)
+    out = {m: {} for m in methods}
+    for m in methods:
         est = {s: smoothed[s] for s in observed if s in smoothed}
         for w in rebuild_order(withheld, observed):
             tg = _neighbour_targets(w, est, stats)
@@ -140,7 +177,7 @@ def reconstruct(smoothed, observed, withheld, stats, params, dt=1 / FS):
                 r = r_nb.copy()
             else:
                 r = r_nb @ mean
-            if m == 'wnoj':
+            if m in ('wnoj', ACCEL_METHOD):
                 factors = [OrientationFactor(rn @ mn, params.joint_scale * s_)
                            for rn, mn, s_, _ in tg]
                 if len(tg) > 1:     # start at the precision-weighted chordal mean of the targets
@@ -151,11 +188,38 @@ def reconstruct(smoothed, observed, withheld, stats, params, dt=1 / FS):
                     r = (u * fix[:, None, :]) @ vt
                 w0, a0 = initial_rates(r, dt)
                 prob = SegmentProblem(dt=dt, qc=params.qc, orientation=factors)
+                if m == ACCEL_METHOD:
+                    af = _accel_factor(w, observed, smoothed, accel)
+                    if af is not None:
+                        prob.accel.append(af)
                 r, wv, _, _ = smooth(prob, r, w0, a0, max_iter=params.max_iter_withheld)
             else:
                 wv = initial_rates(r, dt)[0]
             est[w] = (r, wv)
             out[m][w] = (r, wv)
+    return out
+
+
+def smooth_with_external_prior(r_prior_dict, gyro_obs_or_none=None, dt=1 / FS, qc=1e3,
+                               sigma_prior_deg=4.0, sigma_gyro=0.05, max_iter=30):
+    """WNOJ post-smoothing of external per-frame rotation predictions (e.g. a BiGRU).
+
+    r_prior_dict: sensor -> (T, 3, 3) predicted world rotations. gyro_obs_or_none:
+    sensor -> (T, 3) world-frame rad/s for sensors whose gyro is observed (never pass a
+    withheld sensor's gyro). Returns sensor -> (R, w) with R smoothed under the WNOJ prior
+    and an orientation factor of sigma_prior_deg to the prediction (model T3-M5).
+    """
+    gyro_obs_or_none = gyro_obs_or_none or {}
+    out = {}
+    for s, r_prior in r_prior_dict.items():
+        r_prior = np.asarray(r_prior, dtype=float)
+        g = gyro_obs_or_none.get(s)
+        prob = SegmentProblem(dt=dt, qc=qc, sigma_gyro=sigma_gyro,
+                              gyro=None if g is None else np.asarray(g, dtype=float),
+                              orientation=[OrientationFactor(r_prior, np.deg2rad(sigma_prior_deg))])
+        w0, a0 = initial_rates(r_prior, dt)
+        r, w, _, _ = smooth(prob, r_prior, w0, a0, max_iter=max_iter)
+        out[s] = (r, w)
     return out
 
 
@@ -176,16 +240,22 @@ def evaluate_chunk(values, labels, names, observed, withheld, stats, params, bon
                                    needed_neighbours(observed, withheld), params)
     else:   # a shared cache may hold more sensors; only observed ones may be used
         smoothed = {s: smoothed[s] for s in observed if s in smoothed}
-    rec = reconstruct(smoothed, list(observed), withheld, stats, params)
+    accel = None
+    if params.accel_unit == 'g':      # only then are accelerometer channels read
+        need = needed_neighbours(observed, withheld)
+        accel = {'acc': {s: obs_values[:, list(observed).index(s), 0:3].astype(float)
+                         for s in need},
+                 'bones': bones, 'sigma': params.sigma_acc, 'huber_k': params.huber_k}
+    rec = reconstruct(smoothed, list(observed), withheld, stats, params, accel=accel)
     ref = rotations(values, names)
     out = {'labels': np.asarray(labels), 'v1': {}, 'v2': {}, 'v3': {}}
-    for m in METHODS:
+    for m in methods_for(params):
         for w in withheld:
             r_hat, w_hat = rec[m][w]
             out['v1'][(m, w)] = geodesic_deg(ref[w], r_hat).astype(np.float32)
             gyro = values[:, names.index(w), 3:6].astype(float)
             out['v2'][(m, w)] = np.linalg.norm(w_hat - gyro, axis=1).astype(np.float32)
-        if bones is not None:
+        if bones is not None and all(k in bones for k in PARENT):    # V3 needs every bone
             rots = {s: (smoothed[s][0] if s in smoothed else ref[s]) for s in observed}
             rots.update({w: rec[m][w][0] for w in withheld})
             fk_hat = forward_kinematics(rots, bones)

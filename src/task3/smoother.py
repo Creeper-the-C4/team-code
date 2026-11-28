@@ -5,13 +5,15 @@ Unknowns: per frame (d_phi, d_w, d_a) = 9 numbers, so 9T in total. Factors:
 - gyro factor (w_k - w_meas_k) / sigma_g on frames with a measurement;
 - orientation-type factors e_R = Log(R_target^T R_k) / sigma on chosen frames.
   This covers the segment's own quaternion and the joint factors that tie a
-  withheld segment to a neighbour, R_target = R_neighbour @ R_rel.
+  withheld segment to a neighbour, R_target = R_neighbour @ R_rel;
+- optional link-acceleration factors (T3-M3, accel_factor.AccelFactor), IRLS-Huber
+  weighted, registered only with accel_unit='g' (P0 verdict) for sandwiched segments.
 The normal matrix J^T J is block-tridiagonal (bandwidth 17), so each solve is
 O(T). The default solver accumulates the 9x9 blocks directly and uses a banded
 Cholesky (scipy.linalg.solveh_banded); 'sparse' (scipy.sparse spsolve) and
-'dense' paths build the same matrix and serve as cross-checks. Accelerometer factors are intentionally not
-implemented: they stay gated (`accel_unit='disabled'`) until the P0
-acceleration-unit verdict.
+'dense' paths build the same matrix and serve as cross-checks. Acceleration is
+read only when accel_unit='g'; with 'none'/'disabled' (default) no acceleration
+factor is registered and the accelerometer channels are never read.
 """
 from dataclasses import dataclass, field
 
@@ -20,14 +22,18 @@ import scipy.sparse as sp
 from scipy.linalg import solveh_banded
 from scipy.sparse.linalg import spsolve
 
+from .accel_factor import ACCEL_G_TO_SI, ACCEL_SCHEMA  # noqa: F401  (re-exported)
+from .accel_factor import AccelFactor, irls_weights
+from .accel_factor import jacobian as accel_jacobian
+from .accel_factor import residual as accel_residual
 from .so3_lie import exp_so3
 from .wnoj_prior import orientation_residual, residual_jacobians, whitener
 
 ACCEL_UNITS = ('none', 'disabled', 'g', 'mps2')
-# Factor types this module can register. There is deliberately no acceleration factor:
-# accelerometer channels are never read by the smoother (second guard after the CLI).
-FACTOR_TYPES = ('wnoj_prior', 'gyro', 'orientation')
-ACCEL_FACTOR_REGISTERED = False
+# Factor types this module can register. 'accel_link' exists only for accel_unit='g'
+# (P0 verdict); in the default mode it is never registered (second guard after the CLI).
+FACTOR_TYPES = ('wnoj_prior', 'gyro', 'orientation', 'accel_link')
+ACCEL_FACTOR_REGISTERED = False      # default-mode value; 'g' runs report their own flag
 SOLVER_LOG = []          # per-process record of smooth() calls (iterations, convergence)
 ROT_TOL = 1e-7           # rad: converged when the largest orientation update is below this
 
@@ -35,10 +41,10 @@ ROT_TOL = 1e-7           # rad: converged when the largest orientation update is
 def check_accel_unit(accel_unit):
     if accel_unit not in ACCEL_UNITS:
         raise ValueError(f'accel_unit must be one of {ACCEL_UNITS}')
-    if accel_unit not in ('none', 'disabled'):
+    if accel_unit == 'mps2':
         raise NotImplementedError(
-            'Acceleration factors are gated until the P0 diag_accel_unit verdict; '
-            'only accel_unit="none"/"disabled" is available in this version.')
+            'The P0 diag_accel_unit verdict is "g" (gravity-compensated, in g); '
+            'accel_unit="mps2" contradicts it and is refused.')
 
 
 @dataclass
@@ -55,6 +61,7 @@ class SegmentProblem:
     gyro: np.ndarray = None                       # (T, 3) world-frame rad/s, or None
     sigma_gyro: float = 0.05
     orientation: list = field(default_factory=list)
+    accel: list = field(default_factory=list)     # AccelFactor list (accel_unit='g' only)
 
 
 class _Builder:
@@ -110,6 +117,12 @@ def linear_system(problem, r, w, a):
         e, jac = orientation_residual(f.target[idx], r[idx])
         sig = np.broadcast_to(np.asarray(f.sigma, dtype=float), (3,))
         b.add(jac / sig[None, :, None], 9 * idx, e / sig)
+    for f in problem.accel:
+        e = accel_residual(r, w, a, f)
+        sw = np.sqrt(irls_weights(e, f)) / f.sigma
+        idx = np.nonzero(sw > 0)[0]
+        b.add(accel_jacobian(r[idx], w[idx], a[idx], f) * sw[idx, None, None], 9 * idx,
+              e[idx] * sw[idx, None])
     return b.matrix(9 * t)
 
 
@@ -153,6 +166,15 @@ def normal_blocks(problem, r, w, a):
         jt = np.swapaxes(jw, 1, 2)
         dg[mask, 0:3, 0:3] += jt @ jw
         g[mask, 0:3] += np.einsum('kij,kj->ki', jt, rw)
+        cost += float(np.sum(rw ** 2))
+    for f in problem.accel:                       # IRLS: weights from the current residual
+        e = accel_residual(r, w, a, f)
+        sw = np.sqrt(irls_weights(e, f)) / f.sigma
+        jw = accel_jacobian(r, w, a, f) * sw[:, None, None]
+        rw = np.where(sw[:, None] > 0, e * sw[:, None], 0.0)
+        jt = np.swapaxes(jw, 1, 2)
+        dg += jt @ jw
+        g += np.einsum('kij,kj->ki', jt, rw)
         cost += float(np.sum(rw ** 2))
     return dg, off, g, cost
 
@@ -216,11 +238,12 @@ def gauss_newton_step(problem, r, w, a, damping=1e-9, solver='banded'):
 
 
 def registered_factors(problem):
-    """Factor types present in a problem (never includes an acceleration factor)."""
+    """Factor types present in a problem (accel_link only when accel factors were added)."""
     out = ['wnoj_prior']
     if problem.gyro is not None:
         out.append('gyro')
     out += ['orientation'] * len(problem.orientation)
+    out += ['accel_link'] * len(problem.accel)
     assert set(out) <= set(FACTOR_TYPES)
     return out
 
