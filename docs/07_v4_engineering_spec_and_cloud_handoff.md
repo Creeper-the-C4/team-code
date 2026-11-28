@@ -2,6 +2,14 @@
 
 本文档面向云端计算环境（RTX 4090 / `independent_v1` 30 人全量缓存），按执行顺序给出**可直接复制执行的云端操作步骤**、**结果回传要求**以及 **V4.0 冻结工程口径**。
 
+
+
+> **2026年11月28日接续状态**：第一题V4已于12:37:49完成8组、48折训练并通过脚本核验。详见 [完整结果报告](09_task1_v4_full_validation_report.md) 与 [当日安排](08_2026-11-28_experiment_plan_and_progress.md)。第一题本轮进程已退出，完整结果保留在 `/root/autodl-tmp/C_Problem/results/task1_v4_20261128`。
+>
+> 本次使用独立入口运行第一题。它与下方整套总控的状态文件、结果目录和锁不同，整套总控不会自动识别本轮所有阶段已完成。后续优先选择第二、三题的独立入口，避免重复计算；跨入口恢复须先核对版本与配置。
+>
+> P0内部物理检查支持自由加速度数值单位为g；第三题本版仍为 `--accel-unit none`，加速度因子的启用需完成物理模型核验。已删除 `/root/autodl-tmp/dataset.zip`，原始解压CSV、处理缓存与模型保留。
+
 > **极速执行总览（全部代码已合入 `main` 并通过 Linux 82/82 单测与全链路冒烟，直接按顺序操作即可）**
 > 1. **拉取最新 `main` 并核对环境**：执行 `git pull --ff-only origin main` 并记录 `git rev-parse HEAD`。
 > 2. **一键启动全量无人值守运行**：进入 `tmux new -s v4_run` 并执行 **`bash scripts/run_cloud_all_v4.sh`**，自动依次完成 **Stage 0（P0 数据检查，3–10 min）→ Stage 1（2s/4s 特征缓存）→ Stage 2（Task 1 全消融 + Sticky HMM）→ Stage 3（Task 2 17 传感器帕累托，含 `ranking_prefix` 对照与 exact wrapper 主线）→ Stage 4（Task 3 WNOJ 留出重建，强制 `--accel-unit none`）→ Stage 6（自动打包 `results/cloud_v4_final_bundle.zip`）**。

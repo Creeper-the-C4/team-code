@@ -63,3 +63,10 @@ Thumbs.db
 !results/task3_v4/**/*.csv
 !results/final_report/*.csv
 !results/timing_by_stage.csv
+
+# Public V4 aggregate bundle; individual metrics and models remain in cloud
+results/task1_v4/**/per_subject_metrics.csv
+results/task1_v4/**/model.txt
+!results/task1_v4/run_20261128_full/report_bundle.zip
+!results/task1_v4/run_20261128_full/logs/
+!results/task1_v4/run_20261128_full/logs/*.log

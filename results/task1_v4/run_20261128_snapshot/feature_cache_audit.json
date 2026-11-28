@@ -1,0 +1,90 @@
+{
+  "complete": true,
+  "caches_checked": 300,
+  "summary_by_family_window": [
+    {
+      "family": "F1B",
+      "window_seconds": 2,
+      "participants_checked": 30,
+      "windows_total": 220702,
+      "feature_count": 544,
+      "nan_count_total": 22527
+    },
+    {
+      "family": "F1H",
+      "window_seconds": 2,
+      "participants_checked": 30,
+      "windows_total": 220702,
+      "feature_count": 408,
+      "nan_count_total": 22690
+    },
+    {
+      "family": "F1H",
+      "window_seconds": 4,
+      "participants_checked": 30,
+      "windows_total": 108613,
+      "feature_count": 408,
+      "nan_count_total": 8143
+    },
+    {
+      "family": "F1W",
+      "window_seconds": 2,
+      "participants_checked": 30,
+      "windows_total": 220702,
+      "feature_count": 544,
+      "nan_count_total": 22690
+    },
+    {
+      "family": "F2",
+      "window_seconds": 2,
+      "participants_checked": 30,
+      "windows_total": 220702,
+      "feature_count": 136,
+      "nan_count_total": 0
+    },
+    {
+      "family": "F2p",
+      "window_seconds": 2,
+      "participants_checked": 30,
+      "windows_total": 220702,
+      "feature_count": 85,
+      "nan_count_total": 0
+    },
+    {
+      "family": "F3",
+      "window_seconds": 2,
+      "participants_checked": 30,
+      "windows_total": 220702,
+      "feature_count": 680,
+      "nan_count_total": 22690
+    },
+    {
+      "family": "F3",
+      "window_seconds": 4,
+      "participants_checked": 30,
+      "windows_total": 108613,
+      "feature_count": 680,
+      "nan_count_total": 8143
+    },
+    {
+      "family": "F4",
+      "window_seconds": 2,
+      "participants_checked": 30,
+      "windows_total": 220702,
+      "feature_count": 734,
+      "nan_count_total": 23068
+    },
+    {
+      "family": "F4",
+      "window_seconds": 4,
+      "participants_checked": 30,
+      "windows_total": 108613,
+      "feature_count": 734,
+      "nan_count_total": 8311
+    }
+  ],
+  "f4_step_frequency_nan_check": "all missing step frequencies recomputed from raw body-frame gyro",
+  "f3_baseline_comparison": "64 evenly spaced windows per participant, exact equality including NaN",
+  "publication_note": "Public aggregate copy; participant-level cache details remain in cloud.",
+  "original_cloud_artifact_sha256": "a41e44fc51315659f24ef49ff35f6f167322b9b620fe25bc64c37197182554f6"
+}

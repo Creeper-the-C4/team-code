@@ -1,0 +1,17 @@
+{
+  "archived_before": "2026-11-28 Task 1 V4 progress and daily plan update",
+  "base_commit": "46bc8a1056461a3980a75d51869c4a676d5dbfcc",
+  "snapshot_utc": "2026-11-28T02:57:10.495407+00:00",
+  "files": [
+    {
+      "original": "README.md",
+      "archive": "README.before.md",
+      "sha256": "647166d3897469178c387047dc67d2f82c02b32a88ca3a152622be1f06b6a4af"
+    },
+    {
+      "original": "docs/07_v4_engineering_spec_and_cloud_handoff.md",
+      "archive": "07_v4_engineering_spec_and_cloud_handoff.before.md",
+      "sha256": "210d3ded28aecccd6db776b06f03b3eabb1044f374c78f435a19f8629a211fa8"
+    }
+  ]
+}

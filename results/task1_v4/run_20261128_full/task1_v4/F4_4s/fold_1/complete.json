@@ -1,0 +1,22 @@
+{
+  "complete": true,
+  "run_id": "e1c49ea63c12442ea2bc6d59d78381f4",
+  "windows": 19123,
+  "best_iteration": 74,
+  "fold_metrics": {
+    "fold": 1,
+    "training_seconds": 52.204048910178244,
+    "best_iteration": 74,
+    "validation_macro_f1": 0.9411041253313799,
+    "test_pooled_macro_f1_13": 0.9123183108250854,
+    "test_subject_equal_macro_f1_13": 0.8934424613636136,
+    "dt_seconds": 2.0
+  },
+  "participant_counts": {
+    "train": 20,
+    "validation": 5,
+    "test": 5
+  },
+  "public_summary_copy": true,
+  "original_cloud_artifact_sha256": "e72668a396c4005b711c6b9664a982b3f8bde08731ee792f26aa90c78e616100"
+}

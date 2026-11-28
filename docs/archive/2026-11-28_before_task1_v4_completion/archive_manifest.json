@@ -1,0 +1,26 @@
+{
+  "base_commit": "46bc8a1056461a3980a75d51869c4a676d5dbfcc",
+  "purpose": "Archive local documents before V4 completion publication",
+  "files": [
+    {
+      "original": "README.md",
+      "archive": "README.md",
+      "sha256": "6950318ccb92c36e423299a3acebe12ce64c3c9fc7e4bac07e080ca4e7c0c746"
+    },
+    {
+      "original": "docs/07_v4_engineering_spec_and_cloud_handoff.md",
+      "archive": "docs/07_v4_engineering_spec_and_cloud_handoff.md",
+      "sha256": "fdf13059e8a64464d93824139e068949ed15bdb9900ccd40c62eb2686f2c66cf"
+    },
+    {
+      "original": "docs/08_2026-11-28_experiment_plan_and_progress.md",
+      "archive": "docs/08_2026-11-28_experiment_plan_and_progress.md",
+      "sha256": "5c10930615c9a2297fda3a00f6f86e52f52f85cc4e4e73a5f4f67a2401589913"
+    },
+    {
+      "original": ".gitignore",
+      "archive": ".gitignore",
+      "sha256": "d2242c2f897435862103ca6bab71e0f256da240b782e146d5e0bafafa1b64e79"
+    }
+  ]
+}

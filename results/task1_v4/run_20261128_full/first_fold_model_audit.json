@@ -1,0 +1,13 @@
+{
+  "verified_utc": "2026-11-28T02:53:59.319360+00:00",
+  "experiment": "F1H_2s",
+  "fold": 0,
+  "test_windows": 30980,
+  "all_test_coordinates_and_labels_match": true,
+  "saved_model_probability_recheck_windows": 512,
+  "max_abs_probability_difference": 0.0,
+  "model_iterations": 265,
+  "test_participant_count": 5,
+  "public_summary_copy": true,
+  "original_cloud_artifact_sha256": "1c1c4ff8e1099b4de05a61777a031b2162f170f26e14fc727689091ee27dd7bc"
+}

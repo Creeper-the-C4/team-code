@@ -1,0 +1,14 @@
+{
+  "parameters": {
+    "data_root": "/root/autodl-tmp/C_Problem/data/processed/independent_v1",
+    "feature_cache": "/root/autodl-tmp/C_Problem/data/processed/v4_features_cache",
+    "split_sha256": "486b224b7952f4831b2ea5a9ef34851ee1421e67ee8df2d18bc98efddc17b021",
+    "family": "F1H",
+    "window_seconds": 2,
+    "sticky_hmm": true,
+    "fast_smoke": false,
+    "n_estimators": 300,
+    "report_version": 2
+  },
+  "run_id": "bf4c841928c34bb49ba950c823d35ec9"
+}

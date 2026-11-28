@@ -1,0 +1,13 @@
+{
+  "deleted_utc": "2026-11-28T04:54:50.772270+00:00",
+  "deleted_file": "/root/autodl-tmp/dataset.zip",
+  "deleted_bytes": 8792539327,
+  "remaining_original_csv_files": 31,
+  "raw_participant_csv_files_retained": 30,
+  "processed_participants_retained": 30,
+  "signal_frames_retained": 13454722,
+  "fold_models_retained": 48,
+  "free_before_bytes": 7386652672,
+  "free_after_bytes": 16179208192,
+  "only_named_zip_deleted": true
+}

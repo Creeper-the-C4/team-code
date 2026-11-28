@@ -1,0 +1,95 @@
+{
+  "started_utc": "2026-11-28T02:50:09.858547+00:00",
+  "source_commit": "46bc8a1056461a3980a75d51869c4a676d5dbfcc",
+  "scope": "Task 1 only",
+  "specifications": [
+    {
+      "family": "F1H",
+      "window_seconds": 2
+    },
+    {
+      "family": "F1W",
+      "window_seconds": 2
+    },
+    {
+      "family": "F1B",
+      "window_seconds": 2
+    },
+    {
+      "family": "F2p",
+      "window_seconds": 2
+    },
+    {
+      "family": "F3",
+      "window_seconds": 2
+    },
+    {
+      "family": "F3",
+      "window_seconds": 4
+    },
+    {
+      "family": "F4",
+      "window_seconds": 2
+    },
+    {
+      "family": "F4",
+      "window_seconds": 4
+    }
+  ],
+  "data_root": "/root/autodl-tmp/C_Problem/data/processed/independent_v1",
+  "feature_cache": "/root/autodl-tmp/C_Problem/data/processed/v4_features_cache",
+  "source_files_sha256": {
+    "src/v4_features/feature_families.py": "4fe871d2c5f6b12567794c26757f84d44a20bcd1f6825013f6e0fcff98c2519e",
+    "src/v4_features/workflow.py": "231fb83da38f215b58fa1d44bcfb589fed9ae04dda3fcb41cc069baf0a32e9fd",
+    "src/v4_features/sticky_hmm.py": "ad4bd0f23bd4555d165bd60f15ef93b49c191301c3f1da0fdf8044a0a055ed4a",
+    "scripts/task1_v4/train_task1_v4.py": "3cff758bdf1eb60dbe0dc9eef1e1cb192db8b4ea27ad4f09de32fabe91bd4d0d",
+    "scripts/task1_v4/extract_v4_features.py": "f2e9b609a144428130e2b6b932e6d71ba1e6757f126a1fe3a63f35eecd1ae9e7",
+    "scripts/preprocessing/independent_data_access.py": "40d63db5ebb4cd3228eeeee7944611c1acfd51ee6cd6b84721157236216e0b7a"
+  },
+  "runner_sha256": "e82d3d1d64c01f53d67399b7fc2f6d1c94d8b10d631d04d4866a15c84b248fb6",
+  "model_saving_wrapper_sha256": "117f56382b708b3d577d6a44bc18ed6932fc4348de219ba5847d62ca963e0542",
+  "split_sha256": "486b224b7952f4831b2ea5a9ef34851ee1421e67ee8df2d18bc98efddc17b021",
+  "expected_oof_windows": {
+    "2": 220702,
+    "4": 108613
+  },
+  "estimated_feature_bytes": 3555643392,
+  "initial_free_bytes": 8184115200,
+  "extraction_workers": 6,
+  "training_jobs_concurrent": 1,
+  "lightgbm_threads_per_model": 12,
+  "maximum_boosting_rounds": 300,
+  "hmm_fit": "inner training subjects only; offline trial-wise Viterbi",
+  "selection": "fixed eight upstream configurations; no test-driven tuning",
+  "limitations": [
+    "Fixed inner validation, not full nested CV.",
+    "OOF ablation comparison is exploratory; no untouched confirmation set.",
+    "Viterbi uses future windows and known trial boundaries; not online inference.",
+    "2s/4s grids differ; their pooled metrics are not paired window comparisons."
+  ],
+  "environment": {
+    "python": "3.12.3 | packaged by Anaconda, Inc. | (main, May  6 2024, 19:46:43) [GCC 11.2.0]",
+    "platform": "Linux-5.15.0-78-generic-x86_64-with-glibc2.35",
+    "versions": {
+      "numpy": "2.3.2",
+      "pandas": "2.3.3",
+      "scipy": "1.16.3",
+      "sklearn": "1.7.2",
+      "lightgbm": "4.6.0",
+      "pyarrow": "22.0.0",
+      "pytest": "8.4.2"
+    },
+    "container_limits": {
+      "cpu.max": "1600000 100000",
+      "memory.max": "128849018880"
+    }
+  },
+  "precheck": {
+    "pytest": "14 passed, including synthetic real-codec/LightGBM smoke",
+    "raw_signals_modified": false
+  },
+  "window_index_files_verified": 60,
+  "window_indices_manifest_sha256": "91b21200f19d8b110d5a05dc0741fd8b908ffcd8aa1dcd4c02ca9326de043d7f",
+  "public_summary_copy": true,
+  "original_cloud_artifact_sha256": "a1b61a07d691ae06a1e723a3704bcb70d3841b59337f40a4b4f1a95d445606a0"
+}

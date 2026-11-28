@@ -1,0 +1,4 @@
+true_activity,slow_walking,moderate_walking,brisk_walking
+slow_walking,17202,754,0
+moderate_walking,1147,15230,1668
+brisk_walking,3,699,18000

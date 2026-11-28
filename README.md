@@ -2,21 +2,28 @@
 
 本仓库（`Creeper-the-C4/team-code`）用于沉淀我们团队在 **2026“认证杯”ICM C 题** 中的完整调研、文献审计、数学建模文档、可复现代码与实验结果。
 
-## 最新进度 2026年11月28日（V4.0 全套云端代码已冻结合入 `main`，Linux 82/82 单测 + 全链路冒烟通过）
+## 最新进度 2026年11月28日 第一题 V4 全量验证完成
 
-> **云端服务器操作请直接按 [docs/07_v4_engineering_spec_and_cloud_handoff.md](docs/07_v4_engineering_spec_and_cloud_handoff.md) 执行（一次启动、无人值守连跑全量、一次性回传）**：
-> ```bash
-> cd /root/autodl-tmp/C_Problem/team-code
-> git fetch origin && git checkout main && git pull --ff-only origin main
-> git rev-parse HEAD
-> tmux new -s v4_run
-> bash scripts/run_cloud_all_v4.sh
-> ```
-> 1. 启动时回传 `git rev-parse HEAD` 与前若干行启动日志；
-> 2. 脚本自带 `flock` 防重入、SHA256 配置校验与断点续跑，自动串联 **Stage 0（P0 数据检查）→ Stage 1（2s/4s 特征提取）→ Stage 2（Task 1 全消融 + Sticky HMM）→ Stage 3（Task 2 17 传感器帕累托）→ Stage 4（Task 3 WNOJ 留出重建，`--accel-unit none`）→ Stage 6（自动汇总打包）**；
-> 3. 跑完后一次性回传小体积压缩包 `results/cloud_v4_final_bundle.zip`（只含表格、图和日志，不含大文件）。
+第一题本轮于 **12:37:49（北京时间）** 完成8组配置、48折训练，30人测试覆盖及核心指标重算核验通过。完整结果见 [第一题 V4 报告](docs/09_task1_v4_full_validation_report.md) 和 [汇总数据](results/task1_v4/run_20261128_full/README.md)。
 
-- **当前已全部合入 `main` 并经 Linux 实测验收的模块（全仓 `pytest -v tests/` 82/82 通过，全链路 `--smoke` 与二次断点续跑均通过）**：
+| 指标 | 旧基线 F3 原始 | 本轮 F1B 2秒 加离线HMM |
+|---|---:|---:|
+| 被试等权13类 Macro-F1 | 88.57% | 90.74% |
+| 合并窗口13类 Macro-F1 | 92.15% | 94.11% |
+
+本轮F3原始预测复现了旧基线得分，8组配置的两项主指标均从离线HMM中获益；F1B加HMM在本轮两项主指标上最高。该排序基于同一套六折的探索性对照；HMM使用后续窗口和已知试次边界，不直接代表实时识别性能。
+
+| 工作 | 实际状态 |
+|---|---|
+| 数据与P0诊断 | 已完成；自由加速度数值单位支持为g |
+| 第一题 V4 | 8/8组、48/48折完成；48个模型与预测保留云端，进入错误分析与论文图表整理 |
+| 第二题与第三题 | 代码就绪，尚待全量实测；按第一题验收、传感器精简、留出重建顺序接续 |
+| 第四题 | 已有离线可观性与敏感性计算，待论文整合 |
+| 存储清理 | 已删除解压后的dataset.zip，释放约8.79 GB；31个CSV、30人缓存及模型保留，剩余约15.07 GiB |
+
+仓库当前为公开状态。本次新发布仅包含汇总指标、分类结果、各折汇总、参数和复现报告；逐人明细、原始信号、逐窗口预测与模型保留云端。详见 [发布清单](results/task1_v4/run_20261128_full/publication_manifest.json)。今日安排见 [实验计划](docs/08_2026-11-28_experiment_plan_and_progress.md)，后续操作见 [交接手册](docs/07_v4_engineering_spec_and_cloud_handoff.md)。
+
+- **代码交付状态（队友交接记录：Linux 全仓82/82检查、全链路冒烟与断点续跑通过；本机云端另复核第一题相关14项检查通过）**：
   - **P0 只读实测诊断**：`scripts/diagnostics/`（7/7 通过）
   - **Task 1 & Task 2 V4 特征族、Sticky HMM 与 6 折帕累托**：`src/v4_features/`、`scripts/task1_v4/`、`scripts/task2_v4/`（14/14 通过，含真实 `pyarrow` + `lightgbm` 端到端测试）
   - **Task 3 $SO(3)$ 李群 WNOJ 平滑器与留出评估器**：`src/task3/`、`scripts/task3/`、`results/task3_offline_v1/`（24/24 通过，含 ODE 运动学一致性、双层加速度禁用门控与 Stage 3→4 逐折接口测试）
@@ -32,9 +39,9 @@
 | 六折 13 类 Macro-F1 均值与标准差 | 0.9206 ± 0.0325 |
 | 测试参与者与窗口 | 30 人，220,702 个 2 秒窗 |
 
-入口：[V4.0 云端交接手册](docs/07_v4_engineering_spec_and_cloud_handoff.md) · [P0 诊断说明](scripts/diagnostics/README.md) · [Task 4 脊柱可观性结果](results/spine_offline_v1/summary.md) · [Task 1 基线说明](docs/06_task1_lightgbm_baseline.md) · [数据预处理快照](docs/05_independent_preprocessing_progress.md)
+入口：[完整结果报告](docs/09_task1_v4_full_validation_report.md) · [今日实验安排](docs/08_2026-11-28_experiment_plan_and_progress.md) · [第一题运行快照](results/task1_v4/run_20261128_snapshot/README.md) · [V4.0 云端交接手册](docs/07_v4_engineering_spec_and_cloud_handoff.md) · [P0 诊断说明](scripts/diagnostics/README.md) · [Task 4 脊柱可观性结果](results/spine_offline_v1/summary.md) · [Task 1 基线说明](docs/06_task1_lightgbm_baseline.md) · [数据预处理快照](docs/05_independent_preprocessing_progress.md)
 
-> **关键红线**：加速度单位分歧在云端运行 `scripts/diagnostics/diag_accel_unit.py` 完成实测裁决前，**不得**盲乘 `9.81`、重复去重力或在 Task 3 中启用 SI 单位加速度因子。
+> **加速度诊断已完成**：P0 内部物理一致性检查支持已经去重力的自由加速度、数值单位为 `g`；这不是外部仪器校准。原缓存保持原值，需要 SI 单位时在派生计算中乘 `9.80665`，不重复去重力。第三题当前交接口径仍为 `--accel-unit none`，精修版另行验收。
 
 ## 核心研究主线（V3.0）
 **人体运动的多尺度可观测性与最小传感器设计**（$\mathrm{Measurement} \to \mathrm{Representation} \to \mathrm{Observability} \to \mathrm{Inference}$）：
@@ -59,11 +66,17 @@ team-code/
 │   ├── 04_v3_blueprint_and_wps.md
 │   ├── 05_independent_preprocessing_progress.md
 │   ├── 06_task1_lightgbm_baseline.md
+│   ├── 07_v4_engineering_spec_and_cloud_handoff.md
+│   ├── 08_2026-11-28_experiment_plan_and_progress.md
+│   ├── 09_task1_v4_full_validation_report.md
 │   ├── reports/                    # 中文进度报告
 │   ├── archive/                    # 本轮更新前的文档归档
 │   └── reference_images/
 ├── scripts/preprocessing/          # 预处理与数据读取脚本
 ├── scripts/task1/                  # 分类基线训练和结果汇总
+├── results/p0_diagnostics/         # 30人P0真实诊断
+├── results/task1_v4/run_20261128_full/ # 第一题8组全量汇总与报告
+├── results/task1_v4/run_20261128_snapshot/ # V4运行进度与核验快照
 ├── results/task1/lightgbm_baseline_v1/ # 六折指标 图表 配置
 └── results/preprocessing/independent_v1/
     ├── README.md
@@ -78,3 +91,7 @@ team-code/
 小体积的结果表和索引交付包已按路径显式纳入版本管理；原始数据、约9 GB的连续缓存、约600 MB的特征数组仍保留在云端。旧README及旧忽略规则归档于 `docs/archive/2026-11-27_before_independent_preprocessing`。
 
 本轮更新前的首页、预处理说明和忽略规则归档于 `docs/archive/2026-11-27_before_task1_baseline`。预处理原始结果及第一次归档保留。
+
+2026年11月28日本次进度更新前的首页与云端交接手册归档于 `docs/archive/2026-11-28_before_task1_v4_progress`。
+
+本次完成结果发布前的本地文档归档于 `docs/archive/2026-11-28_before_task1_v4_completion`。

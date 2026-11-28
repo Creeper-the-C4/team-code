@@ -1,0 +1,43 @@
+{
+  "complete": true,
+  "config": {
+    "data_root": "/root/autodl-tmp/C_Problem/data/processed/independent_v1",
+    "feature_cache": "/root/autodl-tmp/C_Problem/data/processed/v4_features_cache",
+    "split_sha256": "486b224b7952f4831b2ea5a9ef34851ee1421e67ee8df2d18bc98efddc17b021",
+    "family": "F3",
+    "window_seconds": 4,
+    "sticky_hmm": true,
+    "fast_smoke": false,
+    "n_estimators": 300,
+    "report_version": 2
+  },
+  "raw": {
+    "subject_equal_macro_f1_13": 0.8874224089084526,
+    "pooled_macro_f1_13": 0.9239383193728383,
+    "macro_f1_named12": 0.9479407152476691,
+    "walk3_macro_f1": 0.8901838293850054,
+    "accuracy_13": 0.9366190050914716,
+    "n_windows": 108613,
+    "n_subjects": 30,
+    "others_f1": 0.6359095688748686,
+    "rowing_f1": 0.9786252125333981,
+    "worst_class_f1": 0.6359095688748686,
+    "worst_class_id": 0,
+    "worst_class_name": "Others"
+  },
+  "hmm": {
+    "subject_equal_macro_f1_13": 0.8921395298965802,
+    "pooled_macro_f1_13": 0.9299757754330582,
+    "macro_f1_named12": 0.9538771096415646,
+    "walk3_macro_f1": 0.902115490232131,
+    "accuracy_13": 0.9429258007789123,
+    "n_windows": 108613,
+    "n_subjects": 30,
+    "others_f1": 0.6431597649309826,
+    "rowing_f1": 0.9805442754106309,
+    "worst_class_f1": 0.6431597649309826,
+    "worst_class_id": 0,
+    "worst_class_name": "Others"
+  },
+  "dt_seconds": 2.0
+}

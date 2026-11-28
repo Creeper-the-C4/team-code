@@ -1,0 +1,65 @@
+# Raw & processed datasets (never commit large data)
+data/
+dataset/
+*.csv
+*.zip
+*.tar.gz
+*.npy
+*.npz
+*.h5
+*.hdf5
+*.parquet
+*.feather
+*.pkl
+*.joblib
+
+# Allow small tracked metadata if explicitly added later
+!trial_information.csv
+!anthropometric_information.csv
+
+# Model checkpoints & logs
+checkpoints/
+weights/
+runs/
+logs/
+*.pt
+*.pth
+*.ckpt
+*.onnx
+
+# Python / Jupyter / Virtual environments
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+.ipynb_checkpoints/
+.pytest_cache/
+.mypy_cache/
+
+# Secrets & OS files
+.env
+.env.*
+*.key
+*.pem
+.DS_Store
+Thumbs.db
+
+# Explicit small independent-preprocessing deliverables
+!results/preprocessing/independent_v1/*.csv
+!results/preprocessing/independent_v1/indices_and_quality.zip
+!results/preprocessing/independent_v1/reproducibility_handoff.zip
+!scripts/preprocessing/trial_information.csv
+
+# Explicit small Task 1 baseline results
+!results/task1/lightgbm_baseline_v1/*.csv
+!results/task1/lightgbm_baseline_v1/report_bundle.zip
+
+# Explicit small V4 diagnostics and experiment summaries
+!results/p0_diagnostics/*.csv
+!results/task1_v4/**/*.csv
+!results/task2_v4/**/*.csv
+!results/task3_v4/**/*.csv
+!results/final_report/*.csv
+!results/timing_by_stage.csv

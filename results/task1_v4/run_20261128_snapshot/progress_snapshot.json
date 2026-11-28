@@ -1,0 +1,34 @@
+{
+  "checked_utc": "2026-11-28T02:57:10.495407+00:00",
+  "complete": false,
+  "stage": "training",
+  "feature_jobs_complete": 60,
+  "feature_jobs_total": 60,
+  "experiments_complete": 0,
+  "experiments_total": 8,
+  "current_experiment": "F1H_2s",
+  "free_disk_GiB": 7.591,
+  "completed_folds": {
+    "F1H_2s": [
+      {
+        "fold": 0,
+        "training_seconds": 171.867600412108,
+        "best_iteration": 265,
+        "validation_macro_f1": 0.9162493638679834,
+        "test_pooled_macro_f1_13": 0.9159640209879019,
+        "test_subject_equal_macro_f1_13": 0.8105017676530654,
+        "dt_seconds": 1.0
+      },
+      {
+        "fold": 1,
+        "training_seconds": 149.72592546138912,
+        "best_iteration": 299,
+        "validation_macro_f1": 0.9280443363290577,
+        "test_pooled_macro_f1_13": 0.9187019146277703,
+        "test_subject_equal_macro_f1_13": 0.9037293812114022,
+        "dt_seconds": 1.0
+      }
+    ]
+  },
+  "failure": null
+}
