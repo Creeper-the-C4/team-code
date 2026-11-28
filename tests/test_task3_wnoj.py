@@ -16,7 +16,7 @@ from task3.so3_lie import (exp_so3, geodesic_deg, hemisphere_continuity, jl, jl_
                            jr, jr_inv, log_so3, quat_xyzw_to_rot, rot_to_quat_xyzw)
 from task3.smoother import (OrientationFactor, SegmentProblem, blocks_to_sparse,  # noqa: E402
                             check_accel_unit, gauss_newton_step, initial_rates, linear_system,
-                            normal_blocks, smooth)
+                            normal_blocks, registered_factors, smooth)
 from task3.wnoj_prior import (orientation_residual, phi_matrix, q_matrix, residual,  # noqa: E402
                               residual_jacobians, whitener)
 from task3.withheld_eval import (Params, evaluate_chunk, joint_statistics,  # noqa: E402
@@ -163,17 +163,48 @@ def test_smoother_reduces_orientation_noise():
     assert np.median(geodesic_deg(r, r_true)) < 0.75 * np.median(geodesic_deg(r_meas, r_true))
 
 
-def test_accel_unit_is_gated():
-    check_accel_unit('none')
-    check_accel_unit('disabled')
-    for unit in ('g', 'mps2'):
-        with pytest.raises(NotImplementedError):
-            check_accel_unit(unit)
+def test_accel_unit_gate_follows_p0_verdict():
+    for unit in ('none', 'disabled', 'g'):          # P0 verdict 'g' unlocks T3-M3
+        check_accel_unit(unit)
+    with pytest.raises(NotImplementedError):
+        check_accel_unit('mps2')                     # contradicts the P0 verdict
     with pytest.raises(ValueError):
         check_accel_unit('m/s2')
     prob, _, r, w, a = synthetic_problem(60)
     with pytest.raises(NotImplementedError):
-        smooth(prob, r, w, a, accel_unit='g')
+        smooth(prob, r, w, a, accel_unit='mps2')
+    assert 'accel_link' not in registered_factors(prob)
+
+
+def test_accel_factor_jacobian_matches_finite_differences():
+    from task3.accel_factor import AccelFactor, jacobian, residual as acc_res
+    rng = np.random.default_rng(11)
+    t = 7
+    r = exp_so3(rng.normal(size=(t, 3)))
+    w = rng.normal(0, 3, (t, 3))
+    a = rng.normal(0, 20, (t, 3))
+    f = AccelFactor(rng.normal(0, 5, (t, 3)), np.array([0.02, -0.4, 0.05]), 0.5)
+    jac = jacobian(r, w, a, f)
+    h = 1e-6
+    for c in range(9):
+        d = np.zeros((t, 9))
+        d[:, c] = h
+        num = (acc_res(*perturb(r, w, a, d), f) - acc_res(*perturb(r, w, a, -d), f)) / (2 * h)
+        assert np.max(np.abs(num - jac[:, :, c])) < 1e-8
+
+
+def test_solvers_agree_with_accel_factor():
+    from task3.accel_factor import AccelFactor
+    prob, _, r, w, a = synthetic_problem(150)
+    rng = np.random.default_rng(12)
+    prob.accel.append(AccelFactor(rng.normal(0, 2, (150, 3)), np.array([0, -0.4, 0.0]), 2.0))
+    j, res = linear_system(prob, r, w, a)
+    dg, off, g, cost = normal_blocks(prob, r, w, a)
+    assert np.max(np.abs((j.T @ j).toarray() - blocks_to_sparse(dg, off).toarray())) < 1e-9 * dg.max()
+    d = {s: gauss_newton_step(prob, r, w, a, solver=s)[0] for s in ('banded', 'sparse', 'dense')}
+    for s in ('banded', 'sparse'):
+        assert np.linalg.norm(d[s] - d['dense']) / np.linalg.norm(d['dense']) < 1e-9
+    assert 'accel_link' in registered_factors(prob)
 
 
 # ----------------------------------------------------------------------------- withheld
@@ -309,9 +340,9 @@ def test_cli_end_to_end_and_resume(fixture_root, tmp_path):
         assert col in header
     again = subprocess.run(cmd, capture_output=True, text=True)
     assert again.returncode == 0 and 'skipping' in again.stdout
-    bad = subprocess.run(cmd + ['--accel-unit', 'g', '--out', str(tmp_path / 'g')],
+    bad = subprocess.run(cmd + ['--accel-unit', 'mps2', '--out', str(tmp_path / 'm')],
                          capture_output=True, text=True)
-    assert bad.returncode != 0 and 'gated' in bad.stderr
+    assert bad.returncode != 0 and 'verdict' in bad.stderr
 
 
 def test_cli_h3_reads_only_its_own_fold_layout(fixture_root, tmp_path):
@@ -395,3 +426,95 @@ def test_fold_subset_parsing_rejects_invalid_entries(tmp_path):
     bad_len.write_text(json.dumps({'folds': {'0': {'3': ['LowerBack', 'Head']}}}))
     with pytest.raises(ValueError, match='has 2 sensors'):
         cli.parse_fold_subsets(bad_len, 0, [3])
+
+
+# ----------------------------------------------------------------------------- T3-M3 / T3-M5
+def sandwich_chain(n=600, seed=21):
+    """Thigh (observed) - shank (withheld) - foot (observed) with consistent free accelerations."""
+    from independent_data_access import SENSORS
+    from task3.accel_factor import ACCEL_G_TO_SI
+    rng = np.random.default_rng(seed)
+    t = np.arange(n) * DT
+    z = 0 * t
+    rp = exp_so3(np.stack([0.5 * np.sin(2 * np.pi * t), z, z], 1))
+    rw = rp @ exp_so3(np.stack([0.8 + 0.6 * np.sin(2 * np.pi * t + 0.5), z, z], 1))
+    rc = rw @ exp_so3(np.stack([0.4 * np.sin(2 * np.pi * 1.3 * t), z, z], 1))
+    bones = {'RightThigh': np.array([0, -0.45, 0.0]), 'RightShank': np.array([0, -0.42, 0.0]),
+             'RightFoot': np.array([0, 0, 0.20])}
+    knee = np.einsum('nij,j->ni', rp, bones['RightThigh'])
+    ankle = knee + np.einsum('nij,j->ni', rw, bones['RightShank'])
+    pos = {'RightThigh': 0.5 * knee, 'RightShank': knee + 0.5 * (ankle - knee),
+           'RightFoot': ankle + 0.5 * np.einsum('nij,j->ni', rc, bones['RightFoot'])}
+    rots = {s: np.repeat(np.eye(3)[None], n, 0) for s in SENSORS}
+    rots.update({'RightThigh': rp, 'RightShank': rw, 'RightFoot': rc})
+    values = np.zeros((n, len(SENSORS), 10))
+    for i, s in enumerate(SENSORS):
+        p = pos.get(s, np.zeros((n, 3)))
+        acc = np.gradient(np.gradient(p, DT, axis=0), DT, axis=0)
+        values[:, i, 0:3] = (acc + rng.normal(0, 0.05, acc.shape)) / ACCEL_G_TO_SI
+        values[:, i, 3:6] = initial_rates(rots[s], DT)[0] + rng.normal(0, 0.02, (n, 3))
+        noisy = exp_so3(rng.normal(0, np.deg2rad(0.5), (n, 3))) @ rots[s]
+        values[:, i, 6:10] = hemisphere_continuity(rot_to_quat_xyzw(noisy))
+    return values, SENSORS, rots, bones
+
+
+def test_t3m3_link_acceleration_corrects_a_biased_joint_prior():
+    from task3.withheld_eval import EDGES, MODEL_IDS
+    values, names, rots, bones = sandwich_chain()
+    stats = {e: (np.eye(3), np.full(3, np.deg2rad(10.0))) for e in EDGES}
+    stats[('RightThigh', 'RightShank')] = (exp_so3(np.array([0.3, 0, 0])), np.full(3, np.deg2rad(25)))
+    stats[('RightShank', 'RightFoot')] = (exp_so3(np.array([-0.3, 0, 0])), np.full(3, np.deg2rad(25)))
+    obs = [s for s in names if s != 'RightShank']
+    labels = np.full(len(values), 5)
+    out = evaluate_chunk(values, labels, names, obs, ['RightShank'], stats,
+                         Params(accel_unit='g', sigma_acc=1.0), bones)
+    m2 = np.median(out['v1'][('wnoj', 'RightShank')])
+    m3 = np.median(out['v1'][('wnoj_acc', 'RightShank')])
+    assert m3 < 0.7 * m2
+    assert MODEL_IDS['wnoj_acc'] == 'T3-M3' and MODEL_IDS['wnoj'] == 'T3-M2'
+    # default mode never reads acceleration: NaN accelerometer channels change nothing
+    nan_acc = values.copy()
+    nan_acc[:, :, 0:3] = np.nan
+    a = evaluate_chunk(values, labels, names, obs, ['RightShank'], stats, Params(), bones)
+    b = evaluate_chunk(nan_acc, labels, names, obs, ['RightShank'], stats, Params(), bones)
+    assert ('wnoj_acc', 'RightShank') not in a['v1']
+    assert np.array_equal(a['v1'][('wnoj', 'RightShank')], b['v1'][('wnoj', 'RightShank')])
+
+
+def test_t3m3_skips_unsandwiched_segments_safely():
+    values, names, _, bones = sandwich_chain(n=240)
+    stats = {e: (np.eye(3), np.full(3, np.deg2rad(10.0))) for e in __import__(
+        'task3.withheld_eval', fromlist=['EDGES']).EDGES}
+    obs = [s for s in names if s not in ('RightShank', 'RightFoot')]   # no observed child
+    out = evaluate_chunk(values, np.full(240, 5), names, obs, ['RightShank', 'RightFoot'],
+                         stats, Params(accel_unit='g'), bones)
+    assert np.array_equal(out['v1'][('wnoj', 'RightShank')], out['v1'][('wnoj_acc', 'RightShank')])
+    out2 = evaluate_chunk(values, np.full(240, 5), names, [s for s in names if s != 'RightShank'],
+                          ['RightShank'], stats, Params(accel_unit='g'), bones=None)
+    assert np.array_equal(out2['v1'][('wnoj', 'RightShank')], out2['v1'][('wnoj_acc', 'RightShank')])
+
+
+def test_smooth_with_external_prior_interface():
+    from task3.withheld_eval import smooth_with_external_prior
+    prob, r_true, r_meas, _, _ = synthetic_problem(300)
+    out = smooth_with_external_prior({'RightShank': r_meas}, None, sigma_prior_deg=2.0)
+    r, w = out['RightShank']
+    assert r.shape == r_meas.shape and w.shape == (300, 3)
+    assert np.median(geodesic_deg(r, r_true)) < np.median(geodesic_deg(r_meas, r_true))
+
+
+def test_cli_accel_g_reports_t3m2_and_t3m3_side_by_side(fixture_root, tmp_path):
+    out = tmp_path / 'g'
+    subprocess.run([sys.executable, str(REPO / 'scripts' / 'task3' / 'run_task3_wnoj.py'),
+                    '--data-root', str(fixture_root), '--splits', str(fixture_root / 'splits.json'),
+                    '--body-dims', str(fixture_root / 'dims.csv'), '--out', str(out),
+                    '--folds', '0', '--h1-sensors', 'RightShank', '--max-trials-per-activity', '1',
+                    '--max-seconds-per-trial', '10', '--workers', '1', '--no-ablation',
+                    '--accel-unit', 'g'], check=True, capture_output=True)
+    summary = json.loads((out / 'summary.json').read_text())
+    assert summary['accel_unit'] == 'g' and summary['accel_factor_registered'] is True
+    assert summary['accel_schema']['ACCEL_G_TO_SI'] == 9.80665
+    assert summary['accel_schema']['gravity_removed'] is True
+    assert summary['folds'][0]['sigma_acc'] in (1.0, 2.0, 4.0)
+    rows = (out / 'per_sensor_metrics.csv').read_text()
+    assert 'T3-M2' in rows and 'T3-M3' in rows and 'T3-M0' in rows

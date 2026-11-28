@@ -19,7 +19,9 @@ over 2/5/10 s horizons. In gyro-only mode the first frame of each horizon is
 anchored to the measured quaternion.
 
 The reference type is 'withheld_sensor_reference' (not an optical ground truth).
-Acceleration factors stay gated: --accel-unit none|disabled (default); g and mps2 are
+Acceleration: --accel-unit none|disabled (default) never reads Acc. --accel-unit g (P0
+verdict) adds T3-M3, a local robust link-acceleration factor on sandwiched withheld
+segments, reported side by side with T3-M2; mps2 is refused. Formerly: g and mps2 were
 refused until the P0 verdict.
 """
 import os
@@ -44,6 +46,8 @@ from task3.kinematic_tree import bone_lengths, calibrate_bones  # noqa: E402
 from task3 import smoother  # noqa: E402
 from task3.smoother import check_accel_unit  # noqa: E402
 from task3.so3_lie import chordal_mean, geodesic_deg, quat_xyzw_to_rot  # noqa: E402
+from task3.accel_factor import ACCEL_SCHEMA  # noqa: E402
+from task3.withheld_eval import ACCEL_METHOD, MODEL_IDS  # noqa: E402
 from task3.withheld_eval import (METHODS, Params, evaluate_chunk, joint_statistics,  # noqa: E402
                                  needed_neighbours, rotations, smooth_observed, summarise)
 
@@ -54,6 +58,7 @@ DEFAULT_H1 = ['Head', 'UpperBack', 'RightForeArm', 'LeftUpperArm', 'RightShank',
 QC_GRID = [1e2, 1e3, 1e4]
 LAMBDA_GRID = [0.5, 1.0, 2.0]
 REFERENCE = 'withheld_sensor_reference'
+ALL_METHODS = METHODS + (ACCEL_METHOD,)
 
 
 # ----------------------------------------------------------------------------- data access
@@ -173,7 +178,7 @@ def eval_subject(job):
         # each sensor is smoothed from its own channels only, so one cache serves all schemes
         need = sorted({n for obs, wh in schemes.values() for n in needed_neighbours(obs, wh)})
         cache = smooth_observed(v[:, [SENSORS.index(n) for n in need], :], need, need, params)
-        for n, (r_hat, w_hat) in cache.items():      # observed-segment fit residuals
+        for n, (r_hat, w_hat, _a) in cache.items():    # observed-segment fit residuals
             i = SENSORS.index(n)
             d = resid.setdefault(n, {'gyro': [], 'ori': []})
             d['gyro'].append(np.linalg.norm(w_hat - v[:, i, 3:6], axis=1).astype(np.float32))
@@ -210,6 +215,35 @@ def calib_subject(job):
                                          stats, p, smoothed=cache)
                     meds.append(np.median(out['v1'][('wnoj', w)]))
             scores[(qc, lam)] = meds
+    return scores
+
+
+SIGMA_ACC_GRID = [1.0, 2.0, 4.0]
+
+
+def calib_acc_subject(job):
+    """Validation-only choice of sigma_acc for T3-M3 at the already chosen (qc, joint_scale)."""
+    root, subject, stats, sensors, cfg, bones = job
+    scores = {}
+    if bones is None:
+        return scores
+    chunks = list(subject_chunks(root, subject, 1, cfg['chunk_seconds'], cfg['chunk_seconds'],
+                                 first_chunk_only=True))
+    base = Params(qc=cfg['qc'], joint_scale=cfg['joint_scale'])
+    caches = []
+    for _, v, lab in chunks:
+        need = sorted({n for w in sensors
+                       for n in needed_neighbours([s for s in SENSORS if s != w], [w])})
+        caches.append(smooth_observed(v[:, [SENSORS.index(n) for n in need], :], need, need, base))
+    for sig in SIGMA_ACC_GRID:
+        p = Params(qc=cfg['qc'], joint_scale=cfg['joint_scale'], accel_unit='g', sigma_acc=sig)
+        meds = []
+        for (_, v, lab), cache in zip(chunks, caches):
+            for w in sensors:
+                out = evaluate_chunk(v, lab, SENSORS, [s for s in SENSORS if s != w], [w],
+                                     stats, p, bones, smoothed=cache)
+                meds.append(np.median(out['v1'][(ACCEL_METHOD, w)]))
+        scores[sig] = meds
     return scores
 
 
@@ -281,6 +315,8 @@ def main(argv=None):
     ap.add_argument('--chunk-seconds', type=float, default=10.0)
     ap.add_argument('--accel-unit', default='none', choices=['none', 'disabled', 'g', 'mps2'])
     ap.add_argument('--factors', default='both', choices=['gyro', 'orientation', 'both'])
+    ap.add_argument('--sigma-acc', type=float, default=2.0,
+                    help='m/s^2, T3-M3 link-acceleration scale (re-chosen on validation)')
     ap.add_argument('--qc', type=float, default=1e3)
     ap.add_argument('--joint-scale', type=float, default=1.0)
     ap.add_argument('--no-calibrate', action='store_true')
@@ -332,7 +368,24 @@ def main(argv=None):
                          for k in res[0]}
                 qc, lam = min(score, key=score.get)
                 calib = {f'qc={k[0]:g},joint_scale={k[1]:g}': v for k, v in score.items()}
-            params = Params(qc=qc, joint_scale=lam, factors=args.factors)
+            accel = 'g' if args.accel_unit == 'g' else 'none'
+            sigma_acc, calib_acc = args.sigma_acc, None
+            if accel == 'g' and not args.no_calibrate:
+                sandwiched = [w for w in args.h1_sensors if w not in ('LowerBack', 'Head')
+                              and not w.endswith(('Wrist', 'Foot', 'Shoulder'))][:3]
+                res = pool_map(calib_acc_subject,
+                               [(args.data_root, s, stats, sandwiched,
+                                 dict(cfg, qc=qc, joint_scale=lam),
+                                 subject_bones(args.data_root, s, dims))
+                                for s in fold['validation']], args.workers)
+                res = [r for r in res if r]
+                if res:
+                    sc = {k: float(np.mean(np.concatenate([np.asarray(r[k]) for r in res])))
+                          for k in res[0]}
+                    sigma_acc = min(sc, key=sc.get)
+                    calib_acc = {f'sigma_acc={k:g}': v for k, v in sc.items()}
+            params = Params(qc=qc, joint_scale=lam, factors=args.factors, accel_unit=accel,
+                            sigma_acc=sigma_acc)
             jobs = [(args.data_root, s, schemes, stats, params,
                      subject_bones(args.data_root, s, dims), cfg) for s in fold['test']]
             results = pool_map(eval_subject, jobs, args.workers)
@@ -349,6 +402,8 @@ def main(argv=None):
                         abl[k]['v1'].append(v['v1'])
                         abl[k]['self'].append(v['self'])
             info = {'fold': fold['fold'], 'qc': qc, 'joint_scale': lam, 'calibration': calib,
+                    'sigma_acc': sigma_acc if accel == 'g' else None,
+                    'calibration_sigma_acc': calib_acc,
                     'train': fold['train'], 'validation': fold['validation'], 'test': fold['test'],
                     'schemes': {k: {'observed': v[0], 'withheld': v[1]} for k, v in schemes.items()}}
             np.savez(part, subj_res=np.array(subj_res, dtype=object),
@@ -415,11 +470,12 @@ def main(argv=None):
     rows_sensor = []
     for name, per_s in summary.items():
         for s, per_m in per_s.items():
-            for m in METHODS:
+            for m in ALL_METHODS:
                 if m in per_m and 'v1' in per_m[m]:
                     e = per_m[m]
                     masks = {'+'.join(f[name]) for f in input_masks.values() if name in f}
                     rows_sensor.append({'scheme': name, 'withheld_sensor': s, 'method': m,
+                                        'model_id': MODEL_IDS[m],
                                         'input_mask': masks.pop() if len(masks) == 1
                                         else 'per-fold (see summary.json input_masks)',
                                         'n_frames': e['v1']['n'], 'rmse_deg': e['v1']['rmse'],
@@ -465,15 +521,23 @@ def main(argv=None):
                   'metric, NOT a strictly held-out sensor metric. Primary strictly held-out '
                   'results are V1 (geodesic orientation error) and V2 (gyro RMSE).'
               ),
-              'accel_unit': 'none', 'accel_unit_requested': args.accel_unit,
-              'accel_factor_registered': bool(smoother.ACCEL_FACTOR_REGISTERED),
+              'accel_unit': 'g' if args.accel_unit == 'g' else 'none',
+              'accel_unit_requested': args.accel_unit,
+              'accel_factor_registered': args.accel_unit == 'g',
+              'accel_factor_scope': ('T3-M3 only: local link-acceleration factor on withheld '
+                                     'segments with an observed parent and child'
+                                     if args.accel_unit == 'g' else 'none'),
+              'accel_schema': ACCEL_SCHEMA if args.accel_unit == 'g' else None,
+              'model_ids': MODEL_IDS,
               'config': vars(args), 'folds': fold_info, 'input_masks': input_masks,
               'solver': solver, 'observed_residuals': resid_summary,
               'metrics': summary, 'runtime_s': round(time.time() - t_start, 1)}
     (out / 'summary.json').write_text(json.dumps(result, indent=1, default=str), encoding='utf-8')
     lines = ['# Task 3 WNOJ withheld-sensor reconstruction', '',
-             f'Reference type: `{REFERENCE}` (not an optical ground truth). '
-             'Acceleration factors: none (accel_factor_registered = false). '
+             f'Reference type: `{REFERENCE}` (not an optical ground truth). ' +
+             (f"Acceleration: `g` (x{ACCEL_SCHEMA['ACCEL_G_TO_SI']} to m/s^2, gravity already "
+              'removed), used only by T3-M3. ' if args.accel_unit == 'g'
+              else 'Acceleration factors: none (accel_factor_registered = false). ') +
              f'Runtime {result["runtime_s"]} s.', '',
              f"Solver: {solver['n_calls']} smoothing calls, convergence rate "
              f"{fmt(solver['convergence_rate'])}, failure rate {fmt(solver['failure_rate'])}, "
@@ -484,10 +548,10 @@ def main(argv=None):
              'V2 RMSE (rad/s) |', '|---|---|---|---:|---:|---:|---:|']
     for name, per_s in summary.items():
         for s, per_m in per_s.items():
-            for m in METHODS:
+            for m in ALL_METHODS:
                 if m in per_m and 'v1' in per_m[m]:
                     e = per_m[m]
-                    lines.append(f"| {name} | {s} | {m} | {fmt(e['v1']['median'], 2)} | "
+                    lines.append(f"| {name} | {s} | {MODEL_IDS[m]} {m} | {fmt(e['v1']['median'], 2)} | "
                                  f"{fmt(e['v1']['subject_equal_median'], 2)} | "
                                  f"{fmt(e['v1']['p95'], 2)} | {fmt(e['v2']['rmse'])} |")
     from task3.kinematic_tree import PARENT
@@ -502,7 +566,7 @@ def main(argv=None):
         return False
     ee_rows = [(name, s, m, per_m[m]['v3']) for name, per_s in summary.items()
                for s, per_m in per_s.items() if s.startswith('EE:') and affected(name, s[3:])
-               for m in METHODS if m in per_m]
+               for m in ALL_METHODS if m in per_m]
     if ee_rows:
         lines += ['', 'V3 forward-kinematics end-point displacement (m; derived from a standing '
                   'calibration, not a measured position):', '',
