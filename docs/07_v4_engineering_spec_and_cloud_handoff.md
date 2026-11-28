@@ -122,22 +122,56 @@ git push origin main
 - **Task 1 评估指标**：主表并列报告 **被试等权 13 类 Macro-F1**（基线 `0.8857`）与 **合并池化 13 类 Macro-F1**（基线 `0.9215`），同步报告 12 命名类、步行三速子集与 `Others` 混淆分析；Sticky HMM 转移参数 $p_{\text{stay}}=\exp(-\Delta t/\tau)$ 仅由内层训练集估计。
 - **Task 2 传感器精简**：以 **`F1^H`（Acc/Gyr only）** 为主结果曲线，绘制 $k=1..17$ 帕累托前沿，并与 `F3`/`F4` 对照；每折独立输出入选传感器子集 $S_k$ 供 Task 3 留出验证复用，防止 Task 2→3 跨折泄露。
 
-### 3.2 Task 3（流形平滑重建）与 Task 4（脊柱可观性补偿）
+### 3.2 Task 3（流形平滑重建 + 深度对比）与 Task 4（脊柱可观性补偿）
 
-- **Task 3（WP2，本地离线开发中，即将合入 `main`）**：基于 17 节点刚体运动学树与 $SO(3)$ 李群局部误差状态白噪声加加速度先验（WNOJ / 3 阶 IWP 高斯过程平滑器），采用 **Withheld-sensor reference（留出传感器实测参照，V1/V2/V3 分级）** 验证；加速度因子受 `--accel-unit` 开关门控，待 P0 裁决后再启用。
-- **Task 4（WP3，已完成离线理论计算并合入 `main`）**：
-  - 核心代码：`src/spine/`；离线结果与 3 张论文图：`results/spine_offline_v1/`（详见 [results/spine_offline_v1/summary.md](../results/spine_offline_v1/summary.md) 与 [results/spine_offline_v1/README.md](../results/spine_offline_v1/README.md)）。
+- **Task 3（WP2，WNOJ 含 `T3-M0..M3` 与 BiGRU `T3-M4/M5` 已就绪）**：
+  - `T3-M0..M2`（`--accel-unit none` 主基线）：基于 17 节点刚体运动学树与 $SO(3)$ 李群局部误差状态 3 阶 IWP/WNOJ 高斯过程平滑器，采用 **Withheld-sensor reference（留出传感器实测参照，V1/V2 主指标，V3 为全传感器站立标定衍生条件指标）**。
+  - `T3-M3`（`--accel-unit g` 局部鲁棒加速度因子对比版）：依据 P0 裁决按 `9.80665` 换算 SI 自由加速度（不重复去重力），**严格限定于上下邻居同时被观测的夹心留出节段**，叠加 Huber 降权（$k=1.345$）与冲击帧掩蔽，并与主基线 `T3-M2` 并列报告真实增减。
+  - `T3-M4 / T3-M5`（`scripts/task3_dl/train_bigru_6d.py`，面向云端 RTX 4090）：基于传感器屏蔽感知（`Sensor-Dropout` + 221 维通道零泄露掩码）的双向 GRU，输出连续 6D 旋转矩阵正交映射并用测地线损失训练；`--apply-wnoj-post` 调用共享 `smooth_with_external_prior` 进行 $SO(3)$ 李群后平滑（`T3-M5`），绝不读取被留出通道陀螺仪。
+- **Task 4（WP3，离线计算 + P0 实测静立噪声标定已就绪）**：
+  - 核心代码：`src/spine/`；离线结果与 3 张论文图：`results/spine_offline_v1/`（详见 [results/spine_offline_v1/summary.md](../results/spine_offline_v1/summary.md) 与 [results/spine_offline_v1/README.md](../results/spine_offline_v1/README.md)）；P0 静态噪声标定：`scripts/spine/calibrate_noise_from_p0.py` 输出至 `results/spine_p0_calibration/`。
   - 核心模型预测结论（基于合成硬拉姿态，非实测值）：仅凭 L5 + 上背 IMU（`C0`）无法同时辨识 L1–L5 与 L5/S1 屈曲；单新增 L1 IMU（`C1`）辨识 L1–L5（后验 std `2.57°`）但 L5/S1 不可观，单新增骶骨 IMU（`C1''`）辨识 L5/S1（`2.34°`）但 L1–L5 不可观；全慢模态数 $K\in\{4,6,8,10\}$、柔性弯曲噪声 $\sigma_{\text{bend}}\in\{0.5^\circ..5^\circ\}$ 及 ROM 先验尺度 $0.5\times/1.0\times/1.5\times$ 敏感性均已验证并归档于 `results/spine_offline_v1/sensitivity.json`。
-  - P0 回传后，将用真实数据的加速度噪声水平标定 WP3 中 $\kappa$ 的实际工作区间。
+  - P0 静立噪声标定脚本从各被试站立（class 3）片段提取三轴 MAD 缩尾协方差并映射名义无量纲噪声尺度 $\kappa=\sigma_a \tau^2 / L$（严守静态测量下界边界声明，不覆盖旧 `results/spine_offline_v1/`）。
 
 ---
 
-## 四、当前已全部合入 `main` 并通过 Linux 全链路验证的模块清单
+## 四、模块清单（已集成至统一分支待联合复验）
 
-| 模块 | 路径 | 当前状态 | 云端执行时机 |
+| 模块 | 路径 | 功能边界 | 云端执行时机 |
 | :--- | :--- | :--- | :--- |
-| P0 实测诊断脚本 | `scripts/diagnostics/` + `tests/test_diag_p0.py` | **已合入 `main`（7/7 通过）** | `run_cloud_all_v4.sh` Stage 0 自动执行（3–10 分钟） |
-| Task 1/2 V4 特征族、Sticky HMM 与 6 折帕累托脚本 | `src/v4_features/`、`scripts/task1_v4/`、`scripts/task2_v4/` + `tests/test_wp1_v4_features_and_masking.py` | **已合入 `main`（Linux 14/14 全通过，含真实 `pyarrow` + `lightgbm`）** | `run_cloud_all_v4.sh` Stage 1–3 自动执行 |
-| Task 3 $SO(3)$ WNOJ 平滑器与留出评估器 | `src/task3/`、`scripts/task3/`、`results/task3_offline_v1/` + `tests/test_task3_wnoj.py` | **已合入 `main`（24/24 通过，含 ODE 运动学校验与双层加速度门控）** | `run_cloud_all_v4.sh` Stage 4 以 `--accel-unit none` 自动执行；待 P0 裁决后再启加速度精修版 |
-| Task 4 脊柱可观性分析 | `src/spine/` + `results/spine_offline_v1/` + `tests/test_spine_offline.py` | **已合入 `main`（37/37 通过）** | 离线完成；P0 回传后回填实测噪声区间 $\kappa$ |
-| 一键云端连跑总控与打包器 | `scripts/run_cloud_all_v4.sh`、`scripts/package_cloud_v4_bundle.py` | **已合入 `main`（Linux `--smoke` 全阶段 + 二次 `[RESUME_SKIP]` 断点续跑 + 103 文件 ZIP 验证通过）** | 开机 `tmux` 一键启动，结束后一次性回传 `results/cloud_v4_final_bundle.zip` |
+| P0 实测诊断脚本 | `scripts/diagnostics/` + `tests/test_diag_p0.py` | **已完成 30 人实测**（`verdict="g"`） | 已有 `results/p0_diagnostics/`，无需重跑 |
+| Task 1/2 V4 特征族、Sticky HMM 与 6 折帕累托脚本 | `src/v4_features/`、`scripts/task1_v4/`、`scripts/task2_v4/` + `tests/test_wp1_v4_features_and_masking.py` | Task 1 48 折已归档；Task 2 输出 `per_fold_selected_subsets.json` | 保持云端当前运行中的 Task 2 跑完即可 |
+| Task 3 $SO(3)$ WNOJ 平滑器（`T3-M0..M3` + `T3-M5` 共享接口） | `src/task3/`、`scripts/task3/run_task3_wnoj.py`、`results/task3_offline_v1/` + `tests/test_task3_wnoj.py` | 支持 `none` 主线与 `g` 夹心节段对比 | `run_cloud_task3_task4_v4.sh` 自动串联执行 |
+| Task 3 6D Sensor-Dropout BiGRU（`T3-M4/M5`） | `src/task3_dl/`、`scripts/task3_dl/train_bigru_6d.py` + `tests/test_task3_bigru_6d.py` | RTX 4090 AMP 训练 + `--apply-wnoj-post` 后平滑 | `run_cloud_task3_task4_v4.sh` 自动紧接 WNOJ 在 GPU 执行 |
+| Task 4 脊柱可观性与 P0 静立噪声标定 | `src/spine/`、`scripts/spine/calibrate_noise_from_p0.py`、`results/spine_offline_v1/` + `tests/test_spine*.py` | 三轴鲁棒静态下界标定与 `M3` 慢模态补充计数 | `run_cloud_task3_task4_v4.sh` 第一阶段自动执行（1–3 分钟） |
+| Task 1/2 论文图表与分层汇总 | `scripts/analysis/build_task12_paper_figures.py` + `tests/test_paper_analysis_scripts.py` | 英文坐标防乱码，队列/纯度/试次分位严格合规脱敏 | `run_cloud_task3_task4_v4.sh` 末尾自动生成至 `results/task12_paper_figures/` |
+| Task 3/4 云端接续总控与打包器 | `scripts/run_cloud_task3_task4_v4.sh`、`scripts/package_cloud_v4_bundle.py` | 无侵入接续运行中的 Task 2；自带 `flock` 与断点续跑 | Task 2 完成后 `git pull` 一键运行 |
+
+---
+
+## 五、Task 2 收尾后的云端一键接续步骤（面向云端队友）
+
+> **重要**：若 Task 2 仍在云端运行中，**请勿中断当前 Task 2 进程**。等待 Task 2 正常跑完并核对输出包含 `F1H_backward/per_fold_selected_subsets.json` 后，按下面命令拉取最新代码并开启接续运行：
+
+```bash
+cd /root/autodl-tmp/C_Problem/team-code
+git fetch origin
+git checkout main
+git pull --ff-only origin main
+git rev-parse HEAD
+
+# 1) 确认云端虚拟环境含 torch CUDA（用于 BiGRU 6D）与全部基础包
+PY=/root/autodl-tmp/C_Problem/.venv/bin/python
+$PY -c "import numpy, scipy, pandas, pyarrow, lightgbm, matplotlib, torch; print('CUDA=', torch.cuda.is_available(), torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU')"
+
+# 2) 在 tmux 中一键依次跑完：Task 4 静态标定 -> Task 3 WNOJ (none) -> Task 3 WNOJ (g) -> BiGRU 6D + T3-M5 -> Task 1/2 论文出图 -> 打包
+#    如你的 Task 2 输出在独立目录（例如 /root/autodl-tmp/C_Problem/results/task2_v4_20261128），脚本会自动探测，也可显式传 --task2-root
+tmux new -s task34_v4
+bash scripts/run_cloud_task3_task4_v4.sh \
+  --task2-root /root/autodl-tmp/C_Problem/results/task2_v4_20261128 \
+  --workers 8
+```
+
+若 Task 2 已直接输出在仓库 `results/task2_v4/` 下，可省略 `--task2-root`（脚本按 `results/task2_v4` → `/root/autodl-tmp/C_Problem/results/task2_v4_20261128` → `/root/autodl-tmp/C_Problem/results/task2_v4` 自动定位）；全部跑完后：
+- `.gitignore` 已显式允许 `results/{spine_p0_calibration,task3_v4,task3_v4_accel_g,task3_bigru_v4,task12_paper_figures}` 下的汇总 CSV/JSON/MD，且**自动忽略所有 `per_subject_metrics.csv`、`_parts/` 与 `checkpoints/`**；
+- 只需将仓库内新增的小体积公开汇总表与图（及 `results/cloud_task34_bundle.zip` 如需备用传输）推送或提交即可，**切勿提交任何原始信号、模型权重、`.parquet` 或逐人明细文件**。

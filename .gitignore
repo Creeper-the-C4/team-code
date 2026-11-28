@@ -61,11 +61,21 @@ Thumbs.db
 !results/task1_v4/**/*.csv
 !results/task2_v4/**/*.csv
 !results/task3_v4/**/*.csv
+!results/task3_v4_accel_g/**/*.csv
+!results/task3_bigru_v4/**/*.csv
+!results/spine_p0_calibration/*.csv
+!results/task12_paper_figures/*.csv
 !results/final_report/*.csv
 !results/timing_by_stage.csv
 
-# Public V4 aggregate bundle; individual metrics and models remain in cloud
+# Public V4 aggregate bundle; individual metrics, resume caches, and models remain in cloud
+results/**/_parts/
+results/**/_checkpoints/
 results/task1_v4/**/per_subject_metrics.csv
+results/task2_v4/**/per_subject_metrics.csv
+results/task3_v4/**/per_subject_metrics.csv
+results/task3_v4_accel_g/**/per_subject_metrics.csv
+results/task3_bigru_v4/**/per_subject_metrics.csv
 results/task1_v4/**/model.txt
 !results/task1_v4/run_20261128_full/report_bundle.zip
 !results/task1_v4/run_20261128_full/logs/

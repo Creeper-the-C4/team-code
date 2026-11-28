@@ -11,8 +11,17 @@ from tempfile import NamedTemporaryFile
 from zipfile import ZIP_DEFLATED, ZipFile
 
 
-STAGES = {"p0_diagnostics": "p0_diagnostics", "task1_v4": "task1", "task2_v4": "task2",
-          "task3_v4": "task3", "task5_bigru": "task5_bigru"}
+STAGES = {
+    "p0_diagnostics": "p0_diagnostics",
+    "task1_v4": "task1",
+    "task2_v4": "task2",
+    "task3_v4": "task3",
+    "task3_v4_accel_g": "task3_accel_g",
+    "task3_bigru_v4": "task3_bigru_v4",
+    "spine_p0_calibration": "spine_p0_calibration",
+    "task12_paper_figures": "task12_paper_figures",
+    "task5_bigru": "task5_bigru",
+}
 ROOT_FILES = ("run_manifest.json", "stage_status.json", "timing_by_stage.csv", "hardware_environment.json")
 EXTRAS = ("figures", "logs", "failures", "final_report")
 ALLOWED = {".json", ".csv", ".md", ".txt", ".log", ".png", ".svg"}
