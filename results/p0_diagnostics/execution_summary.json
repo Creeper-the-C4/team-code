@@ -1,0 +1,61 @@
+{
+  "source_commit": "3e9e5ce7b2538c91df1475144f385b19236a4667",
+  "status": "complete",
+  "subjects": 30,
+  "elapsed_seconds": 172.29852568078786,
+  "acceleration": {
+    "verdict": "g",
+    "T1_hypothesis": "g",
+    "T2_unit": "g",
+    "flight_plateau_raw_median": -0.9816925128300984,
+    "g_to_mps2_factor": 9.80665,
+    "gravity_subtraction_applied": false,
+    "source_cache_changed": false
+  },
+  "orientation": {
+    "skeleton_constrained_flags": {
+      "Left_knee": false,
+      "Right_knee": false,
+      "Left_elbow": false,
+      "Right_elbow": false
+    },
+    "interpretation": "No flag under predefined threshold; not proof of hardware or statistical independence",
+    "residual_lag1_medians": {
+      "LowerBack": 0.018244332997140993,
+      "RightThigh": -0.06012208341353933,
+      "RightShank": -0.06069120442349082,
+      "RightFoot": -0.10997569072550467,
+      "LeftThigh": -0.10383965769717353,
+      "LeftShank": -0.08720649846045858,
+      "LeftFoot": -0.12191627716297145,
+      "UpperBack": 0.03490307734908421,
+      "Head": 0.027044981697158726,
+      "RightShoulder": 0.02950778716896685,
+      "RightUpperArm": 0.03496734718891086,
+      "RightForeArm": 0.041207269441157546,
+      "RightWrist": 0.012821847798902733,
+      "LeftShoulder": 0.028999250511789254,
+      "LeftUpperArm": 0.030406934317357283,
+      "LeftForeArm": 0.02180114701947872,
+      "LeftWrist": 0.0008663252704921398
+    }
+  },
+  "protocol": {
+    "split_audit_ok": true,
+    "non_monotonic_subjects": [
+      2,
+      3
+    ],
+    "cadence_incomplete_subjects": [
+      7,
+      25
+    ],
+    "rowing_to_sitting_position": {
+      "n": 873,
+      "share_first_10pct": 0.10423825887743414,
+      "share_last_10pct": 0.09049255441008018,
+      "share_middle": 0.8052691867124857
+    }
+  },
+  "scope": "Only P0 diagnostics executed; no V4 feature extraction, model training or reconstruction run"
+}

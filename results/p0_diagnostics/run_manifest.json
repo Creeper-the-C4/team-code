@@ -1,0 +1,80 @@
+{
+  "source_commit": "3e9e5ce7b2538c91df1475144f385b19236a4667",
+  "source_repository": "Creeper-the-C4/team-code",
+  "started_utc": "2026-11-28T02:14:58.186268+00:00",
+  "scope": "only the three P0 diagnostic scripts; no V4 training or reconstruction launched",
+  "participants": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30
+  ],
+  "data_root": "/root/autodl-tmp/C_Problem/data/processed/independent_v1",
+  "oof": "/root/autodl-tmp/C_Problem/results/task1_lightgbm_baseline_v1/oof_predictions.parquet",
+  "git_sync": "Local authenticated git pull, verified complete bundle, cloud git pull --ff-only from bundle; no account credential copied to cloud",
+  "environment_threads": {
+    "OMP_NUM_THREADS": "2",
+    "OPENBLAS_NUM_THREADS": "1",
+    "MKL_NUM_THREADS": "1"
+  },
+  "scripts": {
+    "diag_accel_unit": "6ac9b31e0dc8bba10317584d379dbd01f91cc3503339c132aabcf74636e8eeec",
+    "diag_orientation_independence": "5996afae826e92618fb3b1e68cec8b40e488bdd9123f75f664512d83600be155",
+    "diag_subject_protocol": "cc6700fd79b5976735b0e323ebee12fb96c129160091ad12a95854bacb1c9ba9",
+    "common": "46b76d042f6fc7d587e05c92fc770972e8a9828c7ef50fed89ec0a27075ebc87"
+  },
+  "stages": [
+    {
+      "name": "diag_accel_unit",
+      "elapsed_seconds": 114.95423957146704,
+      "exit_code": 0,
+      "json_sha256": "b405b47229f5a501569696c5729443e5ac87a52020caf455b62e6d6cf0a5396b"
+    },
+    {
+      "name": "diag_orientation_independence",
+      "elapsed_seconds": 44.82774276845157,
+      "exit_code": 0,
+      "json_sha256": "ce916c0f71375f4a922d63c76b7803b35b7ec22ae5dc3b506e4c137b29f407dd"
+    },
+    {
+      "name": "diag_subject_protocol",
+      "elapsed_seconds": 12.516543340869248,
+      "exit_code": 0,
+      "json_sha256": "b4dba9b0c32bd18240135d28207a20d63fab24e8f744595a3cef20d62647e40b"
+    }
+  ],
+  "input_metadata_sha256": {
+    "schema.json": "abad2ba4f8ed6f864c2d308d96a8a756a61aa5513bc145e1dc0b8ba5e1299315",
+    "summary.json": "ce41a52fcf290a30ded9f5102b27ae1b3d345363a15ee023fecff2c3d8a41dda"
+  },
+  "loader_sha256": "40d63db5ebb4cd3228eeeee7944611c1acfd51ee6cd6b84721157236216e0b7a",
+  "status": "complete",
+  "completed_utc": "2026-11-28T02:17:50.490022+00:00",
+  "source_metadata_unchanged": true
+}
