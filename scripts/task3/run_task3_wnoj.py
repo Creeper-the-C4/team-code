@@ -350,7 +350,7 @@ def main(argv=None):
         part = parts / f"fold{fold['fold']}.npz"
         meta = parts / f"fold{fold['fold']}.json"
         schemes = build_schemes(args, fold['fold'])
-        if args.resume and part.exists() and meta.exists():
+        if args.resume and not args.overwrite and part.exists() and meta.exists():
             info = json.loads(meta.read_text())
             data = dict(np.load(part, allow_pickle=True))
             subj_res = data['subj_res'].item()

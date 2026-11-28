@@ -347,12 +347,13 @@ do_t4_calibration() {
 }
 
 do_t3_wnoj_none() {
-  local ov_args=()
+  # exactly one run mode: --resume (default) or --overwrite (mutually exclusive in the trainer)
+  local ov_args=(--resume)
   [[ "$OVERWRITE" -eq 1 ]] && ov_args=(--overwrite)
   local base=(
     --data-root "$DATA_ROOT" --splits "$SPLITS_PATH" --body-dims "$BODY_DIMS_PATH"
     --out "$RESULTS_ROOT/task3_v4" --fold-subsets-json "$SUBSETS_JSON"
-    --accel-unit none --workers "$WORKERS" --resume
+    --accel-unit none --workers "$WORKERS"
   )
   if [[ "$SMOKE" -eq 1 ]]; then
     "$PYTHON_BIN" scripts/task3/run_task3_wnoj.py "${base[@]}" \
@@ -366,12 +367,13 @@ do_t3_wnoj_none() {
 }
 
 do_t3_wnoj_g() {
-  local ov_args=()
+  # exactly one run mode: --resume (default) or --overwrite (mutually exclusive in the trainer)
+  local ov_args=(--resume)
   [[ "$OVERWRITE" -eq 1 ]] && ov_args=(--overwrite)
   local base=(
     --data-root "$DATA_ROOT" --splits "$SPLITS_PATH" --body-dims "$BODY_DIMS_PATH"
     --out "$RESULTS_ROOT/task3_v4_accel_g" --fold-subsets-json "$SUBSETS_JSON"
-    --accel-unit g --workers "$WORKERS" --resume
+    --accel-unit g --workers "$WORKERS"
   )
   if [[ "$SMOKE" -eq 1 ]]; then
     "$PYTHON_BIN" scripts/task3/run_task3_wnoj.py "${base[@]}" \
@@ -390,12 +392,13 @@ do_t3_bigru() {
     return 0
   fi
   "$PYTHON_BIN" -c "import torch; print('torch', torch.__version__, 'cuda_available=', torch.cuda.is_available())"
-  local ov_args=()
+  # exactly one run mode: --resume (default) or --overwrite (mutually exclusive in the trainer)
+  local ov_args=(--resume)
   [[ "$OVERWRITE" -eq 1 ]] && ov_args=(--overwrite)
   local base=(
     --data-root "$DATA_ROOT" --splits "$SPLITS_PATH" --body-dims "$BODY_DIMS_PATH"
     --out "$RESULTS_ROOT/task3_bigru_v4" --checkpoint-dir "$CHECKPOINT_DIR"
-    --fold-subsets-json "$SUBSETS_JSON" --device "$BIGRU_DEVICE" --apply-wnoj-post --resume
+    --fold-subsets-json "$SUBSETS_JSON" --device "$BIGRU_DEVICE" --apply-wnoj-post
   )
   if [[ "$SMOKE" -eq 1 ]]; then
     "$PYTHON_BIN" scripts/task3_dl/train_bigru_6d.py "${base[@]}" \

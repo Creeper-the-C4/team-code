@@ -34,6 +34,9 @@ def json_bytes(value):
     return (json.dumps(value, ensure_ascii=False, indent=2, allow_nan=False) + "\n").encode("utf-8")
 
 
+SKIP_DIRS = {'_parts', '_checkpoints'}   # resume intermediates never enter the bundle
+
+
 def collect(root):
     files = {}
     oversized = []
@@ -53,7 +56,8 @@ def collect(root):
         if folder.is_symlink():
             continue
         for parent, dirs, names in os.walk(folder):
-            dirs[:] = sorted(n for n in dirs if not (Path(parent) / n).is_symlink())
+            dirs[:] = sorted(n for n in dirs if not (Path(parent) / n).is_symlink()
+                             and n not in SKIP_DIRS)
             for name in sorted(names):
                 path = Path(parent) / name
                 add(path, f"{target}/{path.relative_to(folder).as_posix()}")
